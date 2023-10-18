@@ -14,6 +14,10 @@
     <link rel="icon" href="images/favicon.ico">
 
     <script src="simulator.js"></script>
+    <script src="monaco-editor/min/vs/loader.js"></script>
+    <script src="constants.js" type="module"></script>
+    <script src="validate.js" type="module"></script>
+    <script src="monaco.js" type="module"></script>
 
 </head>
 
@@ -47,30 +51,7 @@
                     </h4>
                 </div>
                 <div class="panel-body" id="panel_code_body">
-                    <div class="line-numbers">
-                        <textarea class="lines-box" id="lines_box" rows="27" readonly>
-1
-2
-3
-4
-5
-6
-7
-8
-9</textarea>
-                    </div>
-                    <div class="code">
-                        <textarea class="text-code" id="code_box" name="code_box" rows="27" cols="60" wrap="off">
-.section .data
-
-.section .text
-.global asm_function
-
-asm_function:
-ret
-
-.end</textarea>
-                    </div>
+                    <div id="monaco-editor" class="monaco-editor" style="min-width: 100%; min-height: 500px; border-radius: 10px;"></div>
                     <br>
                     <button class="button button-assemble" type="button" onclick="app.assemble()">Assemble Code</button>
                     <button class="button button-run" type="button" onclick="app.run()">Run All</button>

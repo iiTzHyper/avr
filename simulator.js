@@ -2932,7 +2932,7 @@ class App {
     assemble() {
 
         // Getting text from the text window
-        let txt = document.getElementById('code_box').value;
+        let txt = window.editor.getValue();
 
         this.hideOpenPopup(this.current_popup); // hide any open popup
 
@@ -3022,7 +3022,7 @@ class App {
         */
         const steps = this.interpreter.step_count + steps_back;       // the total number of steps to get to the point you want to go for
         
-        let txt = document.getElementById('code_box').value;
+        let txt = window.editor.getValue();
         this.lexer.newData(txt);
         this.parser.newData(this.lexer.getTokenLines(), this.lexer.getLineNumbers(), txt);
         this.interpreter.newData(this.parser.getPMEM(), this.parser.getDMEM(), this.parser.getPMEMLineNumbers(), txt);
