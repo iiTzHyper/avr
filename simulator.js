@@ -44,7 +44,7 @@ class Register {
     }
     setValue(new_value) {
         this.last_value = this.value;
-        this.value = ((new_value % 0x100) + 0x100) % 0x100;
+        this.value = new_value & 0xff;
         this.setChange();
     }
     getValue() {
@@ -221,7 +221,7 @@ class Instruction {
                 const arg = this.args[arg_num].getValue(); // the argument value
                 let var_value;
                 // If it's a 2's comp value then make it 2's comp
-                if (['RJMP'].concat(INST_LIST.slice(7, 27)).includes(this.inst.getValue())) {
+                if (['RJMP','RCALL'].concat(INST_LIST.slice(7, 27)).includes(this.inst.getValue())) {
                     var_value = this.twosComp(arg, digit_count);
                 }
                 else if (FUNCTIONS.includes(arg)) {
@@ -412,26 +412,35 @@ class Lexer {
 
         // Define regular expressions for each token type
         const patterns = [
-            [/^;.*/, null],                     // comments
+            [/^;.*$/, null],                     // comments
             [/^\s+/, null],                     // whitespace
             [/^[\w_]{1}[^;]*:/, 'LABEL'],       // labels
-            [/^lo8(?=[(])|^LO8(?=[(])/, 'LO8'],               // lo8
-            [/^hi8(?=[(])|^HI8(?=[(])/, 'HI8'],               // hi8
-            [/^[rR]\d+(?=[,;\s])/, 'REG'],                // registers
-            [/^-{0,1}0x[\dABCDEFabcdef]+|^-{0,1}\$[\dABCDEFabcdef]+|^-{0,1}0b[01]+/, 'INT'], // numbers
+            [/^lo8(?=[(])/, 'LO8'],             // lo8
+            [/^LO8(?=[(])/, 'LO8'],             // lo8
+            [/^hi8(?=[(])/, 'HI8'],             // hi8
+            [/^HI8(?=[(])/, 'HI8'],             // hi8
+            [/^[rR]\d+(?=[,;\s])/, 'REG'],      // registers
+            [/^-{0,1}0[xX][\dA-Fa-f]+/, 'INT'], // numbers
+            [/^-{0,1}\$[\dA-Fa-f]+/, 'INT'],    // numbers
+            [/^-{0,1}0[oO][0-7]+/, 'INT'],      // numbers
+            [/^-{0,1}0[bB][01]+/, 'INT'],       // numbers
             [/^-{0,1}\d+/, 'INT'],              // numbers
             [/^[a-zA-Z]{2,6}/, 'INST'],         // instructions → CAN TURN LABELS USED IN AN INSTRUCTION INTO INST TYPE
-            [/^\".*?\"|^\'.*?\'/, 'STR'],       // string
-            [/^\.[^\.\s]+/, 'DIR'],             // directives
-            [/^[YZ]\+\d{1,2}/, 'WORDPLUSQ'],    // word+q
+            [/^\".*?\"/, 'STR'],                // string
+            [/^\'.*?\'/, 'STR'],                // string
+            // [/^\.[^\.\s]+/, 'DIR'],             // directives
+            [/\.(section|SECTION|text|TEXT|data|DATA|global|GLOBAL|end|END)/, 'DIR'],        // directives
+            [/\.(byte|BYTE|word|WORD|string|STRING|ascii|ASCII|asciz|ASCIZ|space|SPACE|def|DEF|equ|EQU)/, 'DIR'],   // directives
+            [/^[YZ][ \t]*\+[ \t]*\d{1,2}/, 'WORDPLUSQ'],        // word+q
+            [/^[X][ \t]*\+[ \t]*\d{1,2}/, 'XPLUSQ'],            // X+q
             [/^[XYZ]\+/, 'WORDPLUS'],           // word+
             [/^-[XYZ]/, 'MINUSWORD'],           // -word
             [/^[XYZ]/, 'WORD'],                 // word
             [/^,/, 'COMMA'],                    // comma
-            [/^[^\w\s;]+/, 'SYMBOL'],            // symbols
+            [/^[^\w\s;]+/, 'SYMBOL'],           // symbols
             [/^[^\s\d]{1}[\w\d_]*/, 'REF']      // references (like labels used in an instruction)
         ];
-
+        
         const tokens = [];
         const line_nums = [];
 
@@ -484,6 +493,10 @@ class Lexer {
                     current_tok.setType('REF');
                 }
 
+                if (current_tok.getType() === 'DIR') {
+                    current_tok.setValue(current_tok.getValue().toUpperCase());
+                }
+
                 // If both the current and previous tokens should be 1 REF token combine them
                 if (i > 0 && !['COMMA', 'SYMBOL'].includes(current_tok.getType()) && line_toks[i - 1].getType() === 'REF') {
                     line_toks[i - 1].setValue(line_toks[i - 1].getValue() + current_tok.getValue());
@@ -504,7 +517,6 @@ class Lexer {
         }
 
         return [tokens, line_nums];
-
     }
 
     getText() {
@@ -550,7 +562,8 @@ class Parser {
         this.txt = txt;
         this.lines = this.txt.split('\n');
 
-        this.labels = Object.create(null);
+        this.dmem_labels = Object.create(null);
+        this.pmem_labels = Object.create(null);
 
         this.dmem = [];
         // Add registers to dmem
@@ -589,37 +602,37 @@ class Parser {
 
         const first_line = this.token_lines[0];
 
-        // Check if first line is a .section directive
-        if (first_line[0].getType() !== "DIR" || first_line[0].getValue() !== ".section") {
+        // Check if first line is a .SECTION directive
+        if (first_line[0].getType() !== 'DIR' || first_line[0].getValue() !== '.SECTION') {
             this.newError("First line must be a '.section' directive");
         }
 
         // Check if the first line is correct length and directives
-        if (first_line.length !== 2 || first_line[1].getType() !== "DIR" || ![".data", ".text"].includes(first_line[1].getValue())) {
+        if (first_line.length !== 2 || first_line[1].getType() !== 'DIR' || !['.DATA', '.TEXT'].includes(first_line[1].getValue())) {
             this.newError("First line must be '.section .data' or '.section .text'");
         }
 
         // Check if last line is .end
         const final_line = this.token_lines[this.token_lines.length - 1];
-        if (final_line.length > 1 || final_line[0].getType() !== "DIR" || final_line[0].getValue() !== ".end") {
+        if (final_line.length > 1 || final_line[0].getType() !== 'DIR' || final_line[0].getValue() !== '.END') {
             this.newError("Final line must be '.end'");
         }
 
-        // Find .section .text start
+        // Find .SECTION .text start
         let text_section_start = null;
         for (let line_num = 0; line_num < this.token_lines.length; line_num++) {
             const line = this.token_lines[line_num];
             const line_in_file = this.line_numbers[line_num];
 
-            // If you find a .section directive check it
-            if (line[0].getValue() === ".section" && line[0].getType() === "DIR") {
+            // If you find a .SECTION directive check it
+            if (line[0].getValue() === '.SECTION' && line[0].getType() === 'DIR') {
                 
-                if (line.length !== 2 || line[1].getType() !== "DIR" || ![".data", ".text"].includes(line[1].getValue())) {
+                if (line.length !== 2 || line[1].getType() !== 'DIR' || !['.DATA', '.TEXT'].includes(line[1].getValue())) {
                     this.newError(`Invalid '.section' directive on line ${line_in_file}.`);
                 }
 
                 // If you find the text section then stop looking
-                if (line[1].getValue() === ".text") {
+                if (line[1].getValue() === '.TEXT') {
                     text_section_start = line_num;
                     break;
                 }
@@ -649,7 +662,7 @@ class Parser {
 
                 // Check INST and make upper case
                 if (current_tok.getType() === 'INST') {
-                    current_tok.setValue(current_tok.getValue().toUpperCase()); // make all instructions upper case
+                    current_tok.setValue(current_tok.getValue().toUpperCase()); // make all directives upper case
 
                     if (!INST_LIST.includes(current_tok.getValue())) { // check if the token is a valid instruction
                         this.newError(`Invalid instruction \'${current_tok.getValue()}\' on line ${line_in_file}.`);
@@ -665,18 +678,20 @@ class Parser {
                     }
                 }
 
-                // Check DIR are valid directives
-                else if (current_tok.getType() === 'DIR' && !DIRECTIVES.includes(current_tok.getValue())) {
-                    this.newError(`Invalid directive \'${current_tok.getValue()}\' on line ${line_in_file}.`);
-                }
-
                 // Convert integers to base 10
                 else if (current_tok.getType() === 'INT') {
 
                     let int_value = 0;
 
+                    // Remove negative and store as multiplier for down the bottom of the function
+                    let neg = 1;
+                    if (current_tok.getValue().includes('-')) {
+                        neg = -1;
+                        current_tok.setValue( (current_tok.getValue().slice(1)) );
+                    }
+
                     // this line is technically irrelevant since parseInt deals with 0x already
-                    if (current_tok.getValue().includes('x')) {
+                    if (current_tok.getValue().includes('x') || current_tok.getValue().includes('X')) {
                         int_value = parseInt(current_tok.getValue().slice(2), 16);
                     }
 
@@ -684,7 +699,11 @@ class Parser {
                         int_value = parseInt(current_tok.getValue().slice(1), 16);
                     }
 
-                    else if (current_tok.getValue().includes('b')) {
+                    else if (current_tok.getValue().includes('o') || current_tok.getValue().includes('O')) {
+                        int_value = parseInt(current_tok.getValue().slice(2), 8);
+                    }
+
+                    else if (current_tok.getValue().includes('b') || current_tok.getValue().includes('B')) {
                         int_value = parseInt(current_tok.getValue().slice(2), 2);
                     }
 
@@ -692,7 +711,7 @@ class Parser {
                         int_value = parseInt(current_tok.getValue());
                     }
 
-                    current_tok.setValue(int_value);
+                    current_tok.setValue(neg * int_value);
 
                 }
 
@@ -707,12 +726,11 @@ class Parser {
         // Check data section exists
         const data_section_exists = (text_section_start !== 0);
 
-        let line_num = 0;
-
-        const definitions = Object.create(null);
+        const defs = Object.create(null);
+        const equs = Object.create(null);
 
         // Create pre-existing definitions
-        const reg_defs = {
+        const existing_defs = {
             'ZH': 31,
             'ZL': 30,
             'YH': 29,
@@ -720,30 +738,214 @@ class Parser {
             'XH': 27,
             'XL': 26
         };
-        for (let [key, value] of Object.entries(reg_defs)) {
-            definitions[key] = value;
+
+        for (let [key, value] of Object.entries(existing_defs)) {
+            defs[key] = value;
         }
+
+        // Create pre-existing equs
+        const existing_equs = {
+            'SREG': 0x3f,
+            'SPL': 0x3d,
+            'SPH': 0x3e,
+            'SPMCSR': 0x37,
+            'MCUCR': 0x35,
+            'MCUSR': 0x34,
+            'SMCR': 0x33,
+            'ACSR': 0x30,
+            'SPDR': 0x2e,
+            'SPSR': 0x2d,
+            'SPCR': 0x2c,
+            'GPIOR2': 0x2b,
+            'GPIOR1': 0x2a,
+            'OCR0B': 0x28,
+            'OCR0A': 0x27,
+            'TCNT0': 0x26,
+            'TCCR0B': 0x25,
+            'TCCR0A': 0x24,
+            'GTCCR': 0x23,
+            'EEARH': 0x22,
+            'EEARL': 0x21,
+            'EEDR': 0x20,
+            'EECR': 0x1f,
+            'GPIOR0': 0x1e,
+            'EIMSK': 0x1d,
+            'EIFR': 0x1c,
+            'PCIFR': 0x1b,
+            'TIFR2': 0x17,
+            'TIFR1': 0x16,
+            'TIFR0': 0x15,
+            'PORTD': 0x0b,
+            'DDRD': 0x0a,
+            'PIND': 0x09,
+            'PORTC': 0x08,
+            'DDRC': 0x07,
+            'PINC': 0x06,
+            'PORTB': 0x05,
+            'DDRB': 0x04,
+            'PINB': 0x03,
+        };
+
+        for (let [key, value] of Object.entries(existing_equs)) {
+            equs[key] = value;
+        }
+
+        let line_num = text_section_start;
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Fill in text section info and nulls, etc
+
+        // Assumes line_num == text_section_start
+
+        // Check .global line
+        line_num += 1;                                          // move to the .global line
+        let line = this.token_lines[line_num];                  // current line
+
+        if (line.length !== 2 || line[0].getValue() !== '.GLOBAL') {
+            const line_in_file = this.line_numbers[line_num];   // the current line used for raising an error
+            this.newError(`Must begin text section with a valid .global directive: line ${line_in_file}.`);
+        }
+
+        // Some variables for later
+        const global_funct_names = [line[1].getValue()];        // the name of the global function for later
+        line_num += 1;                                          // move to instructions part of text section
+        const pmem_file_lines = [];                             // where in the text file each pmem line is 
+
+        // CREATE PMEM AND GET THE LABEL LOCATIONS
+        while (line_num < (this.token_lines.length - 1)) {
+
+            let line = this.token_lines[line_num]; // current line
+            const line_length = line.length; // calculate number of tokens in the line
+            const line_in_file = this.line_numbers[line_num]; // the current line if there's an error
+
+            let tok_num = 0;
+            let has_label = false; // bool for if the line has a label
+
+            // While loop does:
+            // Check for labels and remove them
+            // Change HI8 LO8 to integers
+            // Change REF type (data labels) to integers
+            while (tok_num < line_length) {
+
+                const current_tok = line[tok_num]; // current token
+
+                // Check for labels and remove them
+                if (current_tok.getType() === 'LABEL') {
+
+                    // Label can only be at the start
+                    if (tok_num !== 0) {
+                        this.newError(`Illegal label location on line ${line_in_file}.`);
+                    }
+
+                    const label = current_tok.getValue().slice(0, (current_tok.getValue().length - 1)).trim(); // remove the colon from the end
+                    this.pmem_labels[label] = this.pmem.length; //  add it to the labels dictionary
+                    
+                    // Check the global function label when you get to it
+                    if (label === global_funct_names[0]) {
+                        this.dmem[0x5B].setValue(this.pmem.length & 0xff);
+                        this.dmem[0x5C].setValue((this.pmem.length >> 8) & 0xff); 
+                    }
+
+                    has_label = true;
+                }
+
+                tok_num += 1;
+            }
+
+            // If the line has a label AND instruction remove the label
+            if (has_label && (line_length > 1)) {
+                line = line.slice(1);
+            }
+
+            // Add the line to the program memory
+            if ((!has_label) || (has_label && (line_length > 1))) {
+
+                if (line[0].getType() == 'DIR' && line[0].getValue() == '.GLOBAL') {
+                    if (this.getPMEM().length > 0) {
+                        this.newError(`Illegal .global directive on line ${line_in_file}.`);
+                    }
+
+                    if (has_label) {
+                        this.newError(`Cannot have label on .global directive on line ${line_in_file}.`);
+                    }
+
+                    if (line.length !== 2) {
+                        this.newError(`Incorrect number of arguments for .global directive on line ${line_in_file}.`);
+                    }
+
+                    if (line[1].getType() !== 'REF') {
+                        this.newError(`Illegal token type ${line[1].getType()} for the argument ${line[1].getValue()} on line ${line_in_file}.`);
+                    }
+
+                    global_funct_names.push(line[1].getValue());
+                    line_num += 1;
+                    continue;
+
+                }
+
+                // If theyre not instructions, it's illegal
+                if (line[0].getType() !== 'INST') {
+                    this.newError(`Illegal token \'${line[0].getValue()}\' on line ${line_in_file}.`);
+                }
+
+                this.pmem.push(line); // set the line to the line without the label
+                this.pmem_line_numbers.push(line_in_file);
+                pmem_file_lines.push(line_in_file);
+                const inst = line[0].getValue();
+
+                // Add None as next line if it's a 32 bit opcode
+                if (['CALL', 'JMP', 'LDS', 'STS'].includes(inst)) {
+                    this.pmem.push(null);
+                    this.pmem_line_numbers.push(null);
+                    pmem_file_lines.push(line_in_file);
+                }
+            }
+
+            line_num += 1;
+
+        }
+
+        if (this.pmem.length > this.flashend) {
+            this.newError(`Too many lines of code to put into the program memory in the .text section.`);
+        }
+
+        let global_funct_name;
+        // Check you've found the global function name
+        for (let i = 0; i < global_funct_names.length; i++) {
+            global_funct_name = global_funct_names[i];
+            if (this.pmem_labels[global_funct_name] === undefined) {
+                this.newError(`Cannot find the global label \'${global_funct_name}\' in the program. Check spelling if unsure.`);
+            }
+        }
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        line_num = 0;
 
         // GO THROUGH LINES IN DATA SECTION
         while (data_section_exists && (line_num < text_section_start)) {
 
-            if (line_num === 0) {                               // skip if it's the .section .data line
+            if (line_num === 0) {                               // skip if it's the .SECTION .data line
                 line_num += 1;
                 continue
             }
 
             const line = this.token_lines[line_num];
-            const line_length = line.length;                    // calculate number of tokens in the line
+            let line_length = line.length;                      // calculate number of tokens in the line
             const line_in_file = this.line_numbers[line_num];   // the current line if there's an error
 
             let tok_num = 0;
 
             // DEAL WITH LABELS AT THE START OF THE LINE
             if (line[tok_num].getType() === 'LABEL') {
-                let label = line[0].getValue();                 // get label with the colon at the end
+                let label = line[0].getValue();                     // get label with the colon at the end
                 label = label.slice(0, (label.length - 1)).trim();
-                this.labels[label] = this.dmem.length;          // add location of the data label
-                tok_num += 1;
+                this.dmem_labels[label] = this.dmem.length;         // add location of the data label
+                
+                line.shift();                                       // remove the first element
+                line_length -= 1;                                   // correct the line length
+                
+                // Skip the line if you've reached the end
                 if (tok_num >= line_length) {
                     line_num += 1;
                     continue;
@@ -762,27 +964,44 @@ class Parser {
             // EXECUTE THE DIRECTIVE
             while (tok_num < line_length) {
 
-                const current_tok = line[tok_num];
+                let current_tok = line[tok_num];
 
-                const parity_of_tokens_left = (line_length - 1 - tok_num) % 2; // used for calculating comma placement
+                const parity_of_tokens_left = (line_length - 1 - tok_num) & 1; // used for calculating comma placement
 
                 ///// EXECUTE THE DIRECTIVES /////
 
                 // Byte directive
-                if (parity_of_tokens_left === 0 && line_directive === '.byte') {
+                if (parity_of_tokens_left === 0 && ['.BYTE','.WORD'].includes(line_directive)) {
 
-                    if (current_tok.getType() !== 'INT') { // expecting integer
+                    if (current_tok.getType() === 'INT') {
+                        this.dmem.push(current_tok.getValue() & 0xff);
+
+                        if (line_directive === '.WORD') {
+                            this.dmem.push((current_tok.getValue() >> 8) & 0xff);
+                        }
+                    }
+
+                    else if (current_tok.getType() === 'REF') {
+                        if (this.pmem_labels[current_tok.getValue()] === undefined) {
+                            this.newError(`Bad token \'${current_tok.getValue()}\' on line ${line_in_file}.`);
+                        }
+
+                        this.dmem.push(this.pmem_labels[current_tok.getValue()] & 0xff);
+
+                        if (line_directive === '.WORD') {
+                            this.dmem.push((this.pmem_labels[current_tok.getValue()] >> 8) & 0xff);
+                        }
+                    }
+
+                    else {
                         this.newError(`Bad token \'${current_tok.getValue()}\' on line ${line_in_file}.`);
                     }
-                    if (current_tok.getValue() < 0) {                               // JS has weird behaviour for -n % m so we need to correct for it
-                        this.dmem.push(0x100 + (current_tok.getValue() % 0x100));   // fix then add to data
-                    } else {
-                    this.dmem.push(current_tok.getValue() % 0x100); // add to data
-                    }
+
+                    
                 }
 
                 // String, Ascii, Asciz directives
-                else if (parity_of_tokens_left === 0 && ['.string', '.ascii', '.asciz'].includes(line_directive)) {
+                else if (parity_of_tokens_left === 0 && ['.STRING', '.ASCII', '.ASCIZ'].includes(line_directive)) {
 
                     if (current_tok.getType() !== 'STR') {
                         this.newError(`Bad token \'${current_tok.getValue()}\' on line ${line_in_file}.`);
@@ -841,17 +1060,17 @@ class Parser {
                         //    this.newError(`Bad character \'${char}\' on line ${line_in_file}.`);
                         //}
 
-                        this.dmem.push(char_ascii_value % 0x100);           // add to data
+                        this.dmem.push(char_ascii_value & 0xff);           // add to data
                     }
 
-                    if (['.string', '.asciz'].includes(line_directive)) {   // add NULL if directive requires it
+                    if (['.STRING', '.ASCIZ'].includes(line_directive)) {   // add NULL if directive requires it
                         this.dmem.push(0);                                  // add NULL to data
                     }
 
                 }
 
                 // Space directive
-                else if (parity_of_tokens_left === 0 && line_directive === '.space') {
+                else if (parity_of_tokens_left === 0 && line_directive === '.SPACE') {
 
                     if (current_tok.getType() !== 'INT') { // expecting integer
                         this.newError(`Bad token \'${current_tok.getValue()}\' on line ${line_in_file}.`);
@@ -882,7 +1101,7 @@ class Parser {
                         const space_value = current_tok.getValue();             // value of the spaces
                         const number_of_spaces = line[tok_num - 2].getValue();  // the number of spaces we're making
                         for (let i = 0; i < number_of_spaces; i++) {
-                            this.dmem.push(space_value % 0x100);                // add the value for as many spaces as needed
+                            this.dmem.push(space_value & 0xff);                // add the value for as many spaces as needed
                         }
                     }
 
@@ -890,34 +1109,71 @@ class Parser {
                 }
 
                 // Def directive
-                else if (line_directive === '.def') {
+                else if (line_directive === '.DEF') {
 
                     // Check the number of arguments
-                    if ((line_length - tok_num) > 3) { // if there's too many arguments
-                        this.newError(`Too many arguments given for .def on line ${line_in_file}.`);
+                    if ((line_length - tok_num) != 3) { // if there's too many arguments
+                        this.newError(`Wrong number of arguments given for .def on line ${line_in_file}.`);
                     }
 
                     // if it's the 3rd last argument (expecting REF)
-                    if ((tok_num + 3) === line_length && current_tok.getType() !== 'REF') {
+                    if (current_tok.getType() !== 'REF') {
                         this.newError(`Bad argument \'${current_tok.getValue()}\' on line ${line_in_file}.`)
                     }
 
+                    // Move to next token
+                    tok_num += 1;
+                    current_tok = line[tok_num];
+
                     // Raise error if 2nd last token is not '='
-                    else if ((tok_num + 2) === line_length && current_tok.getType() !== 'SYMBOL' && current_tok.getValue() !== '=') {
+                    if (current_tok.getType() !== 'SYMBOL' && current_tok.getValue() !== '=') {
                         this.newError(`Bad argument \'${current_tok.getValue()}\' on line ${line_in_file}.`);
                     }
 
-                    // If it's the last token (expecting REG)
-                    else if ((tok_num + 1) === line_length) {
+                    // Move to next token
+                    tok_num += 1;
+                    current_tok = line[tok_num];
 
-                        if (current_tok.getType() !== 'REG') {
-                            this.newError(`Bad argument \'${current_tok.getValue()}\' on line ${line_in_file}.`);
-                        }
-
-                        const def_word = line[tok_num - 2].getValue();  // get the definition name for the labels list
-
-                        definitions[def_word] = current_tok.getValue(); // add the def word to the labels list
+                    if (current_tok.getType() !== 'REG') {
+                        this.newError(`Bad argument \'${current_tok.getValue()}\' on line ${line_in_file}.`);
                     }
+
+                    const def_word = line[tok_num - 2].getValue();  // get the definition name for the labels list
+                    defs[def_word] = current_tok.getValue();        // add the def word to the labels list
+
+                }
+
+                else if (line_directive === '.EQU') {
+
+                    // Check the number of arguments
+                    if ((line_length - tok_num) != 3) { // if there's too many arguments
+                        this.newError(`Wrong number of arguments given for .equ on line ${line_in_file}.`);
+                    }
+
+                    // if it's the 3rd last argument (expecting REF)
+                    if (current_tok.getType() !== 'REF') {
+                        this.newError(`Bad argument \'${current_tok.getValue()}\' on line ${line_in_file}.`)
+                    }
+
+                    // Move to next token
+                    tok_num += 1;
+                    current_tok = line[tok_num];
+
+                    // Raise error if 2nd last token is not '='
+                    if (current_tok.getType() !== 'SYMBOL' && current_tok.getValue() !== '=') {
+                        this.newError(`Bad argument \'${current_tok.getValue()}\' on line ${line_in_file}.`);
+                    }
+
+                    // Move to next token
+                    tok_num += 1;
+                    current_tok = line[tok_num];
+
+                    if (current_tok.getType() !== 'INT') {
+                        this.newError(`Bad argument \'${current_tok.getValue()}\' on line ${line_in_file}.`);
+                    }
+
+                    const equ_word = line[tok_num - 2].getValue();  // get the equ name for the labels list
+                    equs[equ_word] = current_tok.getValue();        // add the equ word to the labels list
 
                 }
 
@@ -931,69 +1187,91 @@ class Parser {
             }
 
             line_num += 1;
-
-
         }
 
-        // Should be at .section .text line now
+        // Cannot hold more data than 0x8ff
+        if (this.dmem.length > this.ramend) {
+            this.newError(`Too much data to put into the data memory in the .data section.`);
+        }
+
+        // Should be at .SECTION .text line now
 
         //////////////////////////////////////////////
         //////////////// TEXT SECTION ////////////////
         //////////////////////////////////////////////
 
-        // Check .global line
-        line_num += 1;                                          // move to the .global line
-        let line = this.token_lines[line_num];                  // current line
+        const def_keys = Object.keys(defs);
+        const equ_keys = Object.keys(equs);
+        const control_flow_instructions = ['CALL', 'JMP', 'IJMP', 'ICALL', 'RJMP', 'RCALL'].concat(INST_LIST.slice(7, 27)); // all the branching instructions
 
-        if (line.length !== 2 || line[0].getValue() !== '.global') {
-            const line_in_file = this.line_numbers[line_num];   // the current line used for raising an error
-            this.newError(`Must begin text section with a valid \'.global\' directive: line ${line_in_file}.`);
-        }
+        // TURN ALL REFS INTO CORRECT FORM
+        for (let line_num = 0; line_num < this.pmem.length; line_num++) {
 
-        // Some variables for later
-        const global_funct_name = line[1].getValue();           // the name of the global function for later
-        line_num += 1;                                          // move to instructions part of text section
-        const data_labels = Object.keys(this.labels);           // to be used for replacing data labels in instructions
-        const definition_keys = Object.keys(definitions);
-        const pmem_file_lines = [];                             // where in the text file each pmem line is 
-        const opcode_32_bit = ['CALL', 'JMP', 'LDS', 'STS'];    // instructions with 32 bit opcode
+            const line = this.pmem[line_num]; // current line
 
-        // CREATE PMEM AND GET THE LABEL LOCATIONS
-        while (line_num < (this.token_lines.length - 1)) {
+            if (line === null) {
+                continue
+            }
 
-            let line = this.token_lines[line_num]; // current line
-            const line_length = line.length; // calculate number of tokens in the line
-            const line_in_file = this.line_numbers[line_num]; // the current line if there's an error
+            const line_length = line.length;                    // calculate number of tokens in the line
+            const line_in_file = pmem_file_lines[line_num];     // the current line if there's an error
 
-            let tok_num = 0;
-            let has_label = false; // bool for if the line has a label
+            const first_tok = line[0];                          // first token in the line
 
-            // While loop does:
-            // Check for labels and remove them
-            // Change HI8 LO8 to integers
-            // Change REF type (data labels) to integers 
-            while (tok_num < line_length) {
+            // Go through the token lines
+            for (let tok_num = 0; tok_num < line_length; tok_num++) {
 
-                const current_tok = line[tok_num]; // current token
+                const current_tok = line[tok_num];
 
-                // Check for labels and remove them
-                if (current_tok.getType() === 'LABEL') {
+                // Replace REF with valid type and value
+                if (current_tok.getType() === 'REF') {
 
-                    // Label can only be at the start
-                    if (tok_num !== 0) {
-                        this.newError(`Illegal label location on line ${line_in_file}.`);
+                    // If it's a non relative control flow instruction and it's not a function
+                    if (control_flow_instructions.slice(0, 4).includes(first_tok.getValue()) && !FUNCTIONS.includes(current_tok.getValue())) {
+
+                        let k = this.pmem_labels[current_tok.getValue()];      // Get k for label
+
+                        // Replace it in the line
+                        current_tok.setType('INT');
+                        current_tok.setValue(k);
                     }
 
-                    const label = current_tok.getValue().slice(0, (current_tok.getValue().length - 1)).trim(); // remove the colon from the end
-                    this.labels[label] = this.pmem.length; //  add it to the labels dictionary
-                    
-                    // Check the global function label when you get to it
-                    if (label === global_funct_name) {
-                        this.dmem[0x5B].setValue(this.pmem.length % 0x100);
-                        this.dmem[0x5C].setValue(parseInt((this.pmem.length - (this.pmem.length % 0x100)) / 0x100)); 
-                        }
+                    // If it's a relative control flow instruction
+                    else if (control_flow_instructions.slice(4).includes(first_tok.getValue())) {
 
-                    has_label = true;
+                        let k = this.pmem_labels[current_tok.getValue()];    // Get k for label
+                        let relative_k = k - 1 - line_num;              // the k for relative jumping instructions
+
+                        // Replace it in the line
+                        current_tok.setType('INT');
+                        current_tok.setValue(relative_k);
+                    }
+
+                    // If it's in data labels
+                    else if (this.dmem_labels[current_tok.getValue()] !== undefined) {
+                        current_tok.setType('INT');
+                        current_tok.setValue(this.dmem_labels[current_tok.getValue()]);
+                    }
+
+                    // If it's a REG definition
+                    else if (def_keys.includes(current_tok.getValue())) {
+                        current_tok.setType('REG');
+                        current_tok.setValue(defs[current_tok.getValue()]);
+                    }
+
+                    // If it's a REG definition
+                    else if (equ_keys.includes(current_tok.getValue())) {
+                        current_tok.setType('INT');
+                        current_tok.setValue(equs[current_tok.getValue()]);
+                    }
+
+                    // Check if it's a function call?
+
+                    // If it's none of these and not a function, raise an error
+                    else if (!FUNCTIONS.includes(current_tok.getValue())) {
+                        this.newError(`Bad reference ${current_tok.getValue()} on line ${line_in_file}.`);
+                    }
+
                 }
 
                 // Change HI8 LO8 to integers
@@ -1019,144 +1297,33 @@ class Parser {
                     }
 
                     // Check the variable is defined or is an int
-                    if (( this.labels[variable.getValue()] === undefined && variable.getType() !== 'INT') || !['REF', 'INT'].includes(variable.getType()) ) {
+                    if ( this.dmem_labels[variable.getValue()] === undefined && !equ_keys.includes(variable.getValue()) && variable.getType() !== 'INT' ) {
+                        console.log([equ_keys, variable.getValue(), equ_keys['sd']]);
                         this.newError(`Illegal ${current_tok.getValue()} variable on line ${line_in_file}.`);
                     }
 
                     let int_value = 0;
+                    let val;
+                    
+                    if ( variable.getType() == 'INT' ) {
+                        val = variable.getValue();
+                    } else if (this.dmem_labels[variable.getValue()] != undefined) {
+                        val = this.dmem_labels[variable.getValue()];
+                    } else { // if its a .equ variable
+                        val = equs[variable.getValue()];
+                    }
 
                     // Convert the value to the hi8/lo8 value
                     if (current_tok.getType() === 'HI8') {
-                        if ( variable.getType() !== 'INT' ) {
-                        int_value = this.hi8(this.labels[variable.getValue()]);
-                        } else {
-                            int_value = (variable.getValue() >> 8) & 0xff;
-                        }
-                    }
-
-                    else {
-                        if ( variable.getType() !== 'INT' ) {
-                        int_value = this.lo8(this.labels[variable.getValue()]);
-                        } else {
-                            int_value = variable.getValue() & 0xff;
-                        }
+                        int_value = this.hi8(val);
+                    } else {
+                        int_value = this.lo8(val);
                     }
 
                     line[tok_num] = new Token('INT', int_value);
-
-                    line = line.slice(0, (line.length - 3)); // remove the rest of the line
+                    this.pmem[line_num] = line.slice(0, (line.length - 3)); // remove the rest of the line
 
                     tok_num += 3;
-                }
-
-                // Change REF type to correct form from reference
-                else if (current_tok.getType() === 'REF') {
-
-                    // If it's in data labels
-                    if (data_labels.includes(current_tok.getValue())) {
-                        current_tok.setType('INT');
-                        current_tok.setValue(this.labels[current_tok.getValue()]);
-                    }
-
-                    // If it's a REG definition
-                    else if (definition_keys.includes(current_tok.getValue())) {
-                        current_tok.setType('REG');
-                        current_tok.setValue(definitions[current_tok.getValue()]);
-                    }
-
-
-                    // Check if it's a function call?
-
-                    // It may be a pmem label so don't raise an error yet
-                }
-
-                tok_num += 1;
-            }
-
-            // If the line has a label AND instruction remove the label
-            if (has_label && (line_length > 1)) {
-                line = line.slice(1);
-            }
-
-            // Add the line to the program memory
-            if ((!has_label) || (has_label && (line_length > 1))) {
-
-                // If theyre not instructions, it's illegal
-                if (line[0].getType() !== 'INST') {
-                    this.newError(`Illegal token \'${line[0].getValue()}\' on line ${line_in_file}.`);
-                }
-
-                this.pmem.push(line); // set the line to the line without the label
-                this.pmem_line_numbers.push(line_in_file);
-                pmem_file_lines.push(line_in_file);
-                const inst = line[0].getValue();
-
-                // Add None as next line if it's a 32 bit opcode
-                if (opcode_32_bit.includes(inst)) {
-                    this.pmem.push(null);
-                    this.pmem_line_numbers.push(null);
-                    pmem_file_lines.push(line_in_file);
-                }
-            }
-
-            line_num += 1;
-
-        }
-
-        // Check you've found the global function name
-        if (this.labels[global_funct_name] === undefined) {
-            this.newError(`Cannot find the global label \'${global_funct_name}\' to begin the program. Check spelling if unsure.`);
-        }
-
-        const control_flow_instructions = ['CALL', 'JMP', 'RJMP'].concat(INST_LIST.slice(7, 27)); // all the branching instructions
-
-        // TURN ALL REFS INTO CORRECT FORM
-        for (let line_num = 0; line_num < this.pmem.length; line_num++) {
-
-            const line = this.pmem[line_num]; // current line
-
-            if (line === null) {
-                continue
-            }
-
-            const line_length = line.length;                    // calculate number of tokens in the line
-            const line_in_file = pmem_file_lines[line_num];     // the current line if there's an error
-
-            const first_tok = line[0];                          // first token in the line
-
-            // Go through the token lines
-            for (let tok_num = 0; tok_num < line_length; tok_num++) {
-
-                const current_tok = line[tok_num];
-
-                // Replace REF with integer for branching
-                if (current_tok.getType() === 'REF') {
-
-                    // Check the label reference is a real label or function
-                    if (this.labels[current_tok.getValue()] === undefined && !FUNCTIONS.includes(current_tok.getValue())) {
-                        this.newError(`Illegal token \'${current_tok.getValue()}\' on line ${line_in_file}.`);
-                    }
-
-                    // If it's a non relative control flow instruction and it's not a function
-                    if (control_flow_instructions.slice(0, 2).includes(first_tok.getValue()) && !FUNCTIONS.includes(current_tok.getValue())) {
-
-                        let k = this.labels[current_tok.getValue()];      // Get k for label
-
-                        // Replace it in the line
-                        current_tok.setType('INT');
-                        current_tok.setValue(k);
-                    }
-
-                    // If it's a relative control flow instruction
-                    else if (control_flow_instructions.slice(2).includes(first_tok.getValue())) {
-
-                        let k = this.labels[current_tok.getValue()];      // Get k for label
-                        let relative_k = k - 1 - line_num;                  // the k for relative jumping instructions
-
-                        // Replace it in the line
-                        current_tok.setType('INT');
-                        current_tok.setValue(relative_k);
-                    }
                 }
             }
         }
@@ -1173,7 +1340,7 @@ class Parser {
             let line = this.pmem[line_num];                     // the line up to
 
             if (line === null) {                               // skip over none lines
-                continue
+                continue;
             }
 
             let line_length = line.length;                      // calculate number of tokens in the line
@@ -1204,7 +1371,7 @@ class Parser {
 
             // CHECK IF IT'S GOT THE WRONG NUMBER OF ARGUMENTS
             if ((expected_args === null && given_args.length > 0) || (expected_args !== null && (given_args.length !== expected_args.length))) {
-                this.newError(`Wrong number of arguments given on line ${line_in_file}.`);
+                this.newError(`Wrong number of arguments given on line ${line_in_file} for the ${inst} instruction. Please refer to the instruction manual.`);
             }
 
             // CHECK THE ARGUMENTS
@@ -1341,7 +1508,7 @@ class Interpreter {
                 Rd = this.getArgumentValue(line, 0);
                 Rr = this.getArgumentValue(line, 1);
                 C = this.getSREG() & 1;
-                R = (((Rd + Rr + C) % 0x100) + 0x100) % 0x100;
+                R = this.mod256(Rd + Rr + C);
 
                 this.getDMEM()[line.getArgs()[0].getValue()].setValue(R);   // Rd <-- Rd + Rr + C
 
@@ -1354,7 +1521,7 @@ class Interpreter {
             case 'ADD':
                 Rd = this.getArgumentValue(line, 0);
                 Rr = this.getArgumentValue(line, 1);
-                R = (((Rd + Rr) % 0x100) + 0x100) % 0x100;
+                R = this.mod256(Rd + Rr);
 
                 this.getDMEM()[line.getArgs()[0].getValue()].setValue(R);   // Rd <-- Rd + Rr
 
@@ -1368,7 +1535,7 @@ class Interpreter {
                 Rd = this.getArgumentValue(line, 0);
                 K = this.getArgumentValue(line, 1);
                 if ((Rd + K) > 0xff) {
-                    R = (Rd + K) % 0x100;
+                    R = this.mod256(Rd + K);
                     this.getDMEM()[line.getArgs()[0].getValue() + 1].inc();
                 } else {
                     R = Rd + K;
@@ -1407,7 +1574,7 @@ class Interpreter {
             case 'ASR':
                 Rd = this.getArgumentValue(line, 0);
                 R = Rd;
-                R = (R >> 1) & 0xff;
+                R = this.mod256(R >> 1);
                 if ((R & 64) !== 0) {
                     R += 128
                 }
@@ -1639,8 +1806,8 @@ class Interpreter {
                         document.getElementById('console').innerHTML += char;           // add it to the console
                     }
 
-                    this.getDMEM()[24].setValue( W & 0xff );
-                    this.getDMEM()[25].setValue( (W >> 8) & 0xff );
+                    this.getDMEM()[24].setValue(this.mod256(W));
+                    this.getDMEM()[25].setValue(this.mod256(W >> 8));
 
                     //document.getElementById('console').innerHTML += '\n';               // add a new line after a print
 
@@ -1721,7 +1888,7 @@ class Interpreter {
             case 'CP':
                 Rd = this.getArgumentValue(line, 0);
                 Rr = this.getArgumentValue(line, 1);
-                R = (((Rd - Rr) % 0x100) + 0x100) % 0x100;
+                R = this.mod256(Rd - Rr);
 
                 H = (this.getBit(R, 3) & this.getBit(Rr, 3)) | (this.getBit(Rr, 3) & (1 - this.getBit(Rd, 3))) | (this.getBit(R, 3) & (1 - this.getBit(Rd, 3)));
                 V = (this.getBit(R, 7) & this.getBit(Rr, 7) & (1 - this.getBit(Rd, 7))) | ((1 - this.getBit(R, 7)) & (1 - this.getBit(Rr, 7)) & this.getBit(Rd, 7));
@@ -1733,7 +1900,7 @@ class Interpreter {
                 Rd = this.getArgumentValue(line, 0);
                 Rr = this.getArgumentValue(line, 1);
                 C = this.getSREG() & 1;
-                R = (((Rd - Rr - C) % 0x100) + 0x100) % 0x100;
+                R = this.mod256(Rd - Rr - C);
 
                 H = (this.getBit(R, 3) & this.getBit(Rr, 3)) | (this.getBit(Rr, 3) & (1 - this.getBit(Rd, 3))) | (this.getBit(R, 3) & (1 - this.getBit(Rd, 3)));
                 V = (this.getBit(R, 7) & this.getBit(Rr, 7) & (1 - this.getBit(Rd, 7))) | ((1 - this.getBit(R, 7)) & (1 - this.getBit(Rr, 7)) & this.getBit(Rd, 7));
@@ -1745,7 +1912,7 @@ class Interpreter {
             case 'CPI':
                 Rd = this.getArgumentValue(line, 0);
                 K = this.getArgumentValue(line, 1);
-                R = (((Rd - K) % 0x100) + 0x100) % 0x100;
+                R = this.mod256(Rd - K);
 
                 H = (this.getBit(R, 3) & this.getBit(K, 3)) | (this.getBit(K, 3) & (1 - this.getBit(Rd, 3))) | (this.getBit(R, 3) & (1 - this.getBit(Rd, 3)));
                 V = (this.getBit(R, 7) & this.getBit(K, 7) & (1 - this.getBit(Rd, 7))) | ((1 - this.getBit(R, 7)) & (1 - this.getBit(K, 7)) & this.getBit(Rd, 7));
@@ -1772,7 +1939,7 @@ class Interpreter {
                 break;
             case 'DEC':
                 Rd = this.getArgumentValue(line, 0);
-                R = (((Rd - 1) % 0x100) + 0x100) % 0x100;
+                R = this.mod256(Rd - 1);
 
                 this.getDMEM()[line.getArgs()[0].getValue()].setValue(R);   // Rd <-- Rd - 1
 
@@ -1791,6 +1958,28 @@ class Interpreter {
                 N = this.getBit(R, 7);
                 this.updateSREG(null, null, null, N ^ V, V, N, (R === 0), null);
                 break;
+            case 'ICALL':
+                this.incPC();
+
+                if (this.getSP() <= 0x101) {
+                    this.newError(`Bad stack pointer for CALL on line ${line_in_file}.`)
+                    return;
+                }
+
+                this.getDMEM()[this.getSP()] = this.pcl.getValue();              // push pcl in STACK
+                this.decSP();
+                this.getDMEM()[this.getSP()] = this.pch.getValue();              // push pch in STACK
+                this.decSP();
+
+                k = this.getZ();
+                this.setPC(k);
+                skip_inc = true;
+                break;
+            case 'IJMP':
+                k = this.getZ();
+                this.setPC(k);
+                skip_inc = true;
+                break;
             case 'IN':
                 Rd = this.getArgumentValue(line, 0);
                 A = this.getArgumentValue(line, 1);
@@ -1800,7 +1989,7 @@ class Interpreter {
                 break;
             case 'INC':
                 Rd = this.getArgumentValue(line, 0);
-                R = (((Rd + 1) % 0x100) + 0x100) % 0x100;
+                R = this.mod256(Rd + 1);
 
                 this.getDMEM()[line.getArgs()[0].getValue()].setValue(R);   // Rd <-- Rd + 1
 
@@ -1868,7 +2057,7 @@ class Interpreter {
                 break;
             case 'LSL':
                 Rd = this.getArgumentValue(line, 0);
-                R = (((Rd + Rd) % 0x100) + 0x100) % 0x100;
+                R = this.mod256(Rd + Rd);
 
                 this.getDMEM()[line.getArgs()[0].getValue()].setValue(R);   // Rd <-- Rd + Rd
 
@@ -1880,7 +2069,7 @@ class Interpreter {
                 break;
             case 'LSR':
                 Rd = this.getArgumentValue(line, 0);
-                R = (Rd >> 1) & 0xff;
+                R = this.mod256(Rd >> 1);
                 this.getDMEM()[line.getArgs()[0].getValue()].setValue(R);
 
                 N = 0;
@@ -1903,8 +2092,8 @@ class Interpreter {
                 Rr = this.getArgumentValue(line, 1);
                 R = Rd * Rr;
 
-                this.getDMEM()[0].setValue(R % 256);
-                this.getDMEM()[1].setValue((R - (R % 256)) / 256);
+                this.getDMEM()[0].setValue(this.mod256(R));
+                this.getDMEM()[1].setValue(this.mod256(R >> 8));
 
                 this.updateSREG(null, null, null, null, null, null, (R === 0), (R >> 15) & 1);
                 break;
@@ -1913,8 +2102,8 @@ class Interpreter {
                 Rr = this.getArgumentValue(line, 1);
                 R = Rd * Rr;
                 
-                this.getDMEM()[0].setValue(R % 256);
-                this.getDMEM()[1].setValue((R - (R % 256)) / 256);
+                this.getDMEM()[0].setValue(this.mod256(R));
+                this.getDMEM()[1].setValue(this.mod256(R >> 8));
 
                 this.updateSREG(null, null, null, null, null, null, (R === 0), (R >> 15) & 1);
                 break;
@@ -1923,14 +2112,14 @@ class Interpreter {
                 Rr = this.getArgumentValue(line, 1);
                 R = Rd * Rr;
                 
-                this.getDMEM()[0].setValue(R % 256);
-                this.getDMEM()[1].setValue((R - (R % 256)) / 256);
+                this.getDMEM()[0].setValue(this.mod256(R));
+                this.getDMEM()[1].setValue(this.mod256(R >> 8));
 
                 this.updateSREG(null, null, null, null, null, null, (R === 0), (R >> 15) & 1);
                 break;
             case 'NEG':
                 Rd = this.getArgumentValue(line, 0);
-                R = (((0 - Rd) % 0x100) + 0x100) % 0x100;
+                R = this.mod256(0 - Rd);
 
                 this.getDMEM()[line.getArgs()[0].getValue()].setValue(R);   // Rd <-- 0 - Rd
 
@@ -1987,6 +2176,25 @@ class Interpreter {
                 this.getDMEM()[this.getSP()] = Rr;              // set the value in DMEM
                 this.decSP();                                   // decrement the SP by 1
                 break;
+            case 'RCALL':
+                this.incPC();
+
+                if (this.getSP() <= 0x101) {
+                    this.newError(`Bad stack pointer for CALL on line ${line_in_file}.`)
+                    return;
+                }
+
+                this.getDMEM()[this.getSP()] = this.pcl.getValue();              // push pcl in STACK
+                this.decSP();
+                this.getDMEM()[this.getSP()] = this.pch.getValue();              // push pch in STACK
+                this.decSP();
+
+                this.decPC();
+
+                k = this.getArgumentValue(line, 0);
+                this.setPC(this.getPC() + k + 1);
+                skip_inc = true;
+                break;
             case 'RJMP':
                 k = this.getArgumentValue(line, 0);
                 this.setPC(this.getPC() + k + 1);
@@ -2015,7 +2223,7 @@ class Interpreter {
             case 'ROL':
                 Rd = this.getArgumentValue(line, 0);
                 C = this.getSREG() & 1;
-                R = ((Rd << 1) & 0xff) + C;
+                R = this.mod256(Rd << 1) + C;
 
                 this.getDMEM()[line.getArgs()[0].getValue()].setValue(R);
 
@@ -2028,7 +2236,7 @@ class Interpreter {
             case 'ROR':
                 Rd = this.getArgumentValue(line, 0);
                 C = this.getSREG() & 1;
-                R = ((Rd >> 1) & 0xff) + (128 * C);
+                R = this.mod256(Rd >> 1) + (C << 7);
 
                 this.getDMEM()[line.getArgs()[0].getValue()].setValue(R);
 
@@ -2041,7 +2249,7 @@ class Interpreter {
                 Rd = this.getArgumentValue(line, 0);
                 Rr = this.getArgumentValue(line, 1);
                 C = this.getSREG() & 1;
-                R = (((Rd - Rr - C) % 0x100) + 0x100) % 0x100;
+                R = this.mod256(Rd - Rr - C);
 
                 this.getDMEM()[line.getArgs()[0].getValue()].setValue(R);   // Rd <-- Rd - Rr - C
 
@@ -2056,7 +2264,7 @@ class Interpreter {
                 Rd = this.getArgumentValue(line, 0);
                 K = this.getArgumentValue(line, 1);
                 C = this.getSREG() & 1;
-                R = (((Rd - K - C) % 0x100) + 0x100) % 0x100;
+                R = this.mod256(Rd - K - C);
 
                 this.getDMEM()[line.getArgs()[0].getValue()].setValue(R);   // Rd <-- Rd - K - C
 
@@ -2224,7 +2432,7 @@ class Interpreter {
             case 'SUB':
                 Rd = this.getArgumentValue(line, 0);
                 Rr = this.getArgumentValue(line, 1);
-                R = (((Rd - Rr) % 0x100) + 0x100) % 0x100;
+                R = this.mod256(Rd - Rr);
 
                 this.getDMEM()[line.getArgs()[0].getValue()].setValue(R);   // Rd <-- Rd - Rr
 
@@ -2237,7 +2445,7 @@ class Interpreter {
             case 'SUBI':
                 Rd = this.getArgumentValue(line, 0);
                 K = this.getArgumentValue(line, 1);
-                R = (((Rd - K) % 0x100) + 0x100) % 0x100;
+                R = this.mod256(Rd - K);
 
                 this.getDMEM()[line.getArgs()[0].getValue()].setValue(R);   // Rd <-- Rd - K
 
@@ -2303,8 +2511,8 @@ class Interpreter {
     }
 
     setPC(new_value) {
-        this.pch.setValue((new_value >> 8) & 0xff);
-        this.pcl.setValue(new_value & 0xff);
+        this.pch.setValue(this.mod256(new_value >> 8));
+        this.pcl.setValue(this.mod256(new_value));
     }
 
     getSP() {
@@ -2312,8 +2520,8 @@ class Interpreter {
     }
 
     setSP(new_value) {
-        this.sph.setValue((new_value >> 8) & 0xff);
-        this.spl.setValue(new_value & 0xff);
+        this.sph.setValue(this.mod256(new_value >> 8));
+        this.spl.setValue(this.mod256(new_value));
     }
 
     incSP() {
@@ -2442,8 +2650,8 @@ class Interpreter {
 
     incW() {
         const W = this.getW() + 1;
-        this.getDMEM()[25].setValue((W>>8) & 0xff);
-        this.getDMEM()[24].setValue(W & 0xff);
+        this.getDMEM()[25].setValue(this.mod256(W >> 8));
+        this.getDMEM()[24].setValue(this.mod256(W));
     }
 
     decW() {
@@ -2532,6 +2740,10 @@ class Interpreter {
         }
     }
 
+    mod256(val) {
+        return val & 0xff;
+    }
+
     newError(text) {
         this.finished = true;
         document.getElementById('error').innerHTML = text;
@@ -2596,6 +2808,8 @@ INST_LIST = [
     'CPSE',
     'DEC',
     'EOR',
+    'ICALL',
+    'IJMP',
     'IN',
     'INC',
     'JMP',
@@ -2617,6 +2831,7 @@ INST_LIST = [
     'OUT',
     'POP',
     'PUSH',
+    'RCALL',
     'RJMP',
     'RET',
     'ROL',
@@ -2709,6 +2924,8 @@ INST_OPERANDS = {
     'CPSE': [reg_0_31, reg_0_31],
     'DEC': [reg_0_31],
     'EOR': [reg_0_31, reg_0_31],
+    'ICALL': null,
+    'IJMP': null,
     'IN': [reg_0_31, int_0_63],
     'INC': [reg_0_31],
     'JMP': [new Argument('INT', 0, 4194303)],
@@ -2731,6 +2948,7 @@ INST_OPERANDS = {
     'POP': [reg_0_31],
     'PUSH': [reg_0_31],
     'RET': null,
+    'RCALL': [new Argument('INT', -2048, 2047)],
     'RJMP': [new Argument('INT', -2048, 2047)],
     'ROL': [reg_0_31],
     'ROR': [reg_0_31],
@@ -2811,6 +3029,8 @@ INST_OPCODES = {
     'CPSE': ['d', 'r', '000100rdddddrrrr'],
     'DEC': ['d', '1001010ddddd1010'],
     'EOR': ['d', 'r', '001001rdddddrrrr'],
+    'ICALL': ['1001010100001001'],
+    'IJMP': ['1001010000001001'],
     'IN': ['d', 'A', '10110AAdddddAAAA'],
     'INC': ['d', '1001010ddddd0011'],
     'JMP': ['k', '1001010kkkkk110kkkkkkkkkkkkkkkkk'],
@@ -2833,6 +3053,7 @@ INST_OPCODES = {
     'POP': ['d', '1001000ddddd1111'],
     'PUSH': ['r', '1001001rrrrr1111'],
     'RET': ['1001010100001000'],
+    'RCALL': ['k', '1101kkkkkkkkkkkk'], // this one needs 2's comp too
     'RJMP': ['k', '1100kkkkkkkkkkkk'], // this one needs 2's comp too
     'ROL': null,
     'ROR': ['d', '1001010ddddd0111'],
@@ -2863,17 +3084,19 @@ INST_OPCODES = {
 }
 
 DIRECTIVES = [
-    '.section',
-    '.end',
-    '.text',
-    '.data',
-    '.global',
-    '.byte',
-    '.string',
-    '.ascii',
-    '.asciz',
-    '.space',
-    '.def'
+    '.SECTION',
+    '.END',
+    '.TEXT',
+    '.DATA',
+    '.GLOBAL',
+    '.BYTE',
+    '.WORD',
+    '.STRING',
+    '.ASCII',
+    '.ASCIZ',
+    '.SPACE',
+    '.DEF',
+    '.EQU'
 ];
 
 
@@ -4067,6 +4290,20 @@ class App {
 
                     Operation:
                     Rd = Rd ⊕ Rr`,
+            'ICALL': `Syntax:   ICALL
+                    Family:   Branch Instructions
+                    Function: Calls to a subroutine within the entire 4M (words) Program memory. The return address (to the instruction after the CALL) will be stored onto the Stack. See also RCALL. The Stack Pointer uses a post-decrement scheme during CALL. This instruction is not available in all devices. Refer to the device specific instruction set summary.
+
+                    Operations:
+                    PC = Z(15:0)
+                    SP = SP - 2
+                    STACK ← PC + 1`,
+            'IJMP': `Syntax:   IJMP
+                    Family:   Branch Instructions
+                    Function: Indirect jump to the address pointed to by the Z (16 bits) Pointer Register in the Register File. The Zpointer Register is 16 bits wide and allows jump within the lowest 64K words (128KB) section of Program memory. This instruction is not available in all devices. Refer to the device specific instruction set summary.
+
+                    Operation:
+                    PC = Z(15:0)`,
             'IN': `Syntax:   IN Rd, A
                     Family:   Data Transfer Instructions
                     Function: Loads data from the I/O space (ports, timers, configuration registers, etc.) into register Rd in the register file
@@ -4319,6 +4556,17 @@ class App {
 
                     Operation:
                     PC(15:0) ← STACK`,
+            'RCALL': `Syntax:   RCALL k
+                    Family:   Branch Instructions
+                    Function: Relative call to an address within PC - 2047 and PC + 2048 (words)
+
+                    Boundaries:
+                    k → [-2048 - 2047]
+
+                    Operation:
+                    PC = PC + k + 1
+                    SP = SP - 2
+                    STACK ← PC + 1`,
             'RJMP': `Syntax:   RJMP k
                     Family:   Branch Instructions
                     Function: Relative jump to an address within PC - 2047 and PC + 2048 (words)
