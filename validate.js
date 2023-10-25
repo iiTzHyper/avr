@@ -36,8 +36,7 @@ const simplifiedTokenize = (line) => {
 
             if (match) {
                 if (tag) {
-                    console.log(tag)
-                    if (tag == 'REG' || tag == 'INT' || tag == 'WORDPLUSQ' || tag == 'WORDPLUS' || tag == 'MINUSWORD' || tag == 'WORD' || tag == 'REF') {
+                    if (tag == 'INST' || tag == 'REG' || tag == 'INT' || tag == 'WORDPLUSQ' || tag == 'WORDPLUS' || tag == 'MINUSWORD' || tag == 'WORD' || tag == 'REF') {
                         const token = new Token(tag, match[0]);
                         tokens.push(token);
                     }
@@ -62,6 +61,8 @@ const simplifiedTokenize = (line) => {
         if (current_tok.getType() === 'REG' && !Number.isInteger(current_tok.getValue())) {
             const num = current_tok.getValue().substring(1); // the register number
             current_tok.setValue(parseInt(num));
+        } else if (i > 0 && current_tok.getType() === 'INST' && !(i === 1 && tokens[i - 1].getType() === 'LABEL')) {
+            current_tok.setType('REF');
         } else {
             i += 1;
         }
@@ -70,7 +71,7 @@ const simplifiedTokenize = (line) => {
     return tokens;
 }
 
-function validateInstruction(instruction, operand, line) {
+function validateInstruction(instruction, operand, line, modelValue) {
     const operandRules = INST_OPERANDS[instruction];
     if (operandRules) {
         if (operandRules.length !== operand.length) {
@@ -83,13 +84,44 @@ function validateInstruction(instruction, operand, line) {
         const tokens = simplifiedTokenize(line);
         for (let i = 0; i < operandRules.length; i++) {
             const rule = operandRules[i];
-            const tok = tokens[i];
+            const tok = tokens[i + 1];
 
             const legalTokenType = rule.getTokenType();
             const providedTokenType = tok.getType();
             const providedTokenValue = tok.getValue();
 
             if (!legalTokenType.includes(providedTokenType)) {
+                if (legalTokenType.includes("INT") && providedTokenType === "REF") {
+                    
+                    if (!instruction.startsWith("BR") && instruction !== "JMP") {
+                        const definedVarIndex = declaredVariables.findIndex(x => x.varName === providedTokenValue);
+                        if (definedVarIndex === -1) {
+                            return {
+                                valid: false,
+                                message: `VARIABLE "${providedTokenValue}" NOT DEFINED`,
+                                position: line.indexOf(providedTokenValue) + 1,
+                                length: providedTokenValue.length
+                            }
+                        } else {
+                            return {
+                                valid: true
+                            }
+                        }     
+                    }
+
+                    const labelRef = providedTokenValue;
+                    const labelRegex = new RegExp(`^\\s*${labelRef}\\s*:$`, "g");
+
+                    if (!modelValue.match(labelRegex)) {
+                        return {
+                            valid: false,
+                            message: `REFERENCE LABEL "${labelRef}" NOT DEFINED`,
+                            position: line.indexOf(providedTokenValue) + 1,
+                            length: providedTokenValue.length
+                        }
+                    }
+                }
+
                 if (!legalTokenType.includes("INT") || providedTokenType != "REF") {
                     const prettyType = Array.isArray(legalTokenType) ? legalTokenType.join(" OR ") : legalTokenType;
                     return {
@@ -227,8 +259,8 @@ function checkSyntax(model) {
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        let tokens = line.trim().split(/[\s,]+/);
-        let inst = tokens[0].toUpperCase();
+        const tokens = line.trim().split(/[\s,]+/);
+        const inst = tokens[0].toUpperCase();
 
         let operands = tokens.slice(1);
         for (let i = 0; i < operands.length; i++) {
@@ -237,7 +269,7 @@ function checkSyntax(model) {
             }
         }
 
-        const validationResult = validateInstruction(inst, operands, line);
+        const validationResult = validateInstruction(inst, operands, line, text);
         if (!validationResult.valid) {
             markers.push({
                 startLineNumber: i + 1,
