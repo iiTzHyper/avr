@@ -122,6 +122,30 @@ require(['vs/editor/editor.main'], function () {
         }
     })
 
+    monaco.languages.registerFoldingRangeProvider('avr', {
+        provideFoldingRanges: function (model) {
+            const ranges = [];
+            const lines = model.getLinesContent();
+
+            let startLine = -1;
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line.endsWith(':')) {
+                    if (startLine !== -1) {
+                        ranges.push({ start: startLine, end: i - 1 });
+                    }
+                    startLine = i + 1;
+                }
+            }
+
+            if (startLine !== -1) {
+                ranges.push({ start: startLine, end: lines.length - 2 });
+            }
+
+            return ranges;
+        }
+    })
+
     monaco.editor.defineTheme('avrThemeLight', {
         base: 'vs',
         inherit: true,
