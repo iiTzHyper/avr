@@ -45,6 +45,9 @@
                     <h4 class="panel-title">Code
                         <form style="float: right;">
                             <input class="button button-manual" type="button"
+                            onclick="localStorage.setItem('editorContent', '.section .data\n\n.section .text\n.global asm_function\n\nasm_function:\nret\n\n.end'); window.location.reload()"
+                            value="Reset" />
+                            <input class="button button-manual" type="button"
                             onclick=" window.open('http://ww1.microchip.com/downloads/en/devicedoc/atmel-0856-avr-instruction-set-manual.pdf','_blank', 'noopener noreferrer')"
                             value="Instruction Set" target="_blank" rel="noopener noreferrer"/>
                         </form>

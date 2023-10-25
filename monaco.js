@@ -213,7 +213,7 @@ require(['vs/editor/editor.main'], function () {
         overviewRulerLanes: 0,
         language: 'avr',
         theme: 'avrThemeLight',
-        value: [
+        value: localStorage.getItem('editorContent') || [
             '.section .data',
             '',
             '.section .text',
@@ -233,5 +233,7 @@ require(['vs/editor/editor.main'], function () {
     model.onDidChangeContent(() => {
         const markers = checkSyntax(model);
         monaco.editor.setModelMarkers(model, 'instruction-validation', markers);
+
+        localStorage.setItem('editorContent', window.editor.getValue());
     });
 });
