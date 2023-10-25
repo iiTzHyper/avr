@@ -1,3 +1,5 @@
+export const declaredVariables = [];
+
 const simplifiedTokenize = (line) => {
     const tokens = [];
 
@@ -158,6 +160,28 @@ function checkSyntax(model) {
     const text = model.getValue();
     const lines = text.split('\n');
     const markers = [];
+
+    const variablesAreaRegex = /\.section\s+\.data\s+([\s\S]*?)(?=\.section)/;
+    const dataSection = text.match(variablesAreaRegex)[1];
+
+    const potentialVariables = dataSection.split("\n")
+    for (let i = 0; i < potentialVariables.length; i++) {
+        const varMatch = potentialVariables[i].trim().match(/^([a-zA-Z_]\w*):\s*(\.byte|\.string|\.ascii|\.asciz|\.space|\.def)\s+((?:[^,]+(?:,\s*[^,]+)*)?)/);
+        if (!varMatch) continue;
+
+        const existingVarIndex = declaredVariables.findIndex(x => x.varName === varMatch[1]);
+        const varData = {
+            varName: varMatch[1],
+            varType: varMatch[2],
+            varValue: varMatch[3]
+        }
+
+        if (existingVarIndex === -1) {
+            declaredVariables.push(varData);
+        } else {
+            declaredVariables[existingVarIndex] = varData;
+        }
+    }
 
     let realFirstIndex = 0;
     for (let i = 0; i < lines.length; i++) {

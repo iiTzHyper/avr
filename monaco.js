@@ -1,5 +1,6 @@
 import { basicAvrManual, instructionSet, functions, registers, directives } from "./constants.js";
 import { checkSyntax } from "./validate.js";
+import { declaredVariables } from "./validate.js";
 
 require.config({ paths: { vs: 'monaco-editor/min/vs' } });
 require(['vs/editor/editor.main'], function () {
@@ -54,17 +55,32 @@ require(['vs/editor/editor.main'], function () {
     monaco.languages.registerHoverProvider('avr', {
         provideHover: function (model, position) {
             const wordAtPosition = model.getWordAtPosition(position);
-            if (!wordAtPosition) {
-                return;
+            if (!wordAtPosition) return;
+
+            const hoveringWord = wordAtPosition.word;
+            if (basicAvrManual[hoveringWord]) {
+                return {
+                    contents: [
+                        {
+                            value: basicAvrManual[hoveringWord.toUpperCase()]
+                        }
+                    ]
+                }
             }
 
-            const avrInstruction = wordAtPosition.word.toUpperCase();
-            return {
-                contents: [
-                    {
-                        value: basicAvrManual[avrInstruction]
-                    }
-                ]
+            const variableIndex = declaredVariables.findIndex(v => v.varName === hoveringWord);
+            if (variableIndex !== -1) {
+                return {
+                    contents: [
+                        {
+                            value: "```\n" +
+                                `Variable: ${hoveringWord}\n` +
+                                `Type: ${declaredVariables[variableIndex].varType}\n` +
+                                `Value: ${declaredVariables[variableIndex].varValue}\n` +
+                                "```"
+                        }
+                    ]
+                }
             }
         }
     })
