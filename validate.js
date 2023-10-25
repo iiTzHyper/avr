@@ -92,7 +92,6 @@ function validateInstruction(instruction, operand, line, modelValue) {
 
             if (!legalTokenType.includes(providedTokenType)) {
                 if (legalTokenType.includes("INT") && providedTokenType === "REF") {
-                    
                     if (!instruction.startsWith("BR") && instruction !== "JMP") {
                         const definedVarIndex = declaredVariables.findIndex(x => x.varName === providedTokenValue);
                         if (definedVarIndex === -1) {
@@ -230,7 +229,7 @@ function checkSyntax(model) {
             startColumn: 1,
             endLineNumber: realFirstIndex + 2,
             endColumn: lines[realFirstIndex].length + 1,
-            severity: 8, // ERROR
+            severity: monaco.MarkerSeverity.Error,
             message: "First line must be a '.section' directive."
         });
     }
@@ -241,7 +240,7 @@ function checkSyntax(model) {
             startColumn: 1,
             endLineNumber: realFirstIndex + 2,
             endColumn: lines[realFirstIndex].length + 1,
-            severity: 8, // ERROR
+            severity: monaco.MarkerSeverity.Error,
             message: "First line must be either '.section .data' or '.section .text'."
         });
     }
@@ -252,7 +251,7 @@ function checkSyntax(model) {
             startColumn: 1,
             endLineNumber: lines.length,
             endColumn: lines[lines.length - 1].length + 1,
-            severity: 8, // ERROR
+            severity: monaco.MarkerSeverity.Error,
             message: "Final line must be '.end'."
         });
     }
@@ -279,7 +278,7 @@ function checkSyntax(model) {
                 startColumn: validationResult.position ?? 1,
                 endLineNumber: i + 1,
                 endColumn: validationResult.length ? validationResult.position + validationResult.length : line.length + 1,
-                severity: 8, // ERROR
+                severity: monaco.MarkerSeverity.Error,
                 message: validationResult.message
             });
         }

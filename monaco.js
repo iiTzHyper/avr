@@ -58,7 +58,7 @@ require(['vs/editor/editor.main'], function () {
             if (!wordAtPosition) return;
 
             const hoveringWord = wordAtPosition.word;
-            if (basicAvrManual[hoveringWord]) {
+            if (basicAvrManual[hoveringWord.toUpperCase()]) {
                 return {
                     contents: [
                         {
@@ -68,16 +68,37 @@ require(['vs/editor/editor.main'], function () {
                 }
             }
 
-            const variableIndex = declaredVariables.findIndex(v => v.varName === hoveringWord);
+            const variableIndex = declaredVariables.findIndex(v => v.varName.toLowerCase() === hoveringWord.toLowerCase());
             if (variableIndex !== -1) {
                 return {
                     contents: [
                         {
                             value: "```\n" +
-                                `Variable: ${hoveringWord}\n` +
+                                `Variable: ${declaredVariables[variableIndex].varName}\n` +
                                 `Type: ${declaredVariables[variableIndex].varType}\n` +
                                 `Value: ${declaredVariables[variableIndex].varValue}\n` +
                                 "```"
+                        }
+                    ]
+                }
+            }
+
+            if (registers.includes(hoveringWord.toLowerCase())) {
+                return {
+                    contents: [
+                        {
+                            value: `\`\`\`\n(register) ${hoveringWord.toUpperCase()}\n\`\`\``
+                        }
+                    ]
+                }
+            }
+
+            const lineContent = model.getLineContent(position.lineNumber);
+            if (lineContent.trim().startsWith(hoveringWord) && lineContent.trim().endsWith(':')) {
+                return {
+                    contents: [
+                        {
+                            value: `\`\`\`\n(label) ${hoveringWord}\n\`\`\``
                         }
                     ]
                 }
