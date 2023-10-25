@@ -263,6 +263,9 @@ function checkSyntax(model) {
         const inst = tokens[0].toUpperCase();
 
         let operands = tokens.slice(1);
+        const commentIndex = operands.findIndex(x => x.includes(";"));
+        if (commentIndex !== -1) operands = operands.slice(0, commentIndex);
+
         for (let i = 0; i < operands.length; i++) {
             if (operands[i] == "," || operands[i] == "") {
                 operands.splice(i, 1);
