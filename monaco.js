@@ -35,7 +35,7 @@ require(['vs/editor/editor.main'], function () {
                 [/\.(section|text|data|global|end)/, 'directives'],
 
                 // Data type
-                [/\.(byte|string|ascii|asciz|space|def)/, 'type'],
+                [/\.(byte|word|string|ascii|asciz|space|def)/, 'type'],
 
                 // Numbers
                 [/\b0[xX][0-9a-fA-F]+\b/, "number.hex"],
@@ -146,7 +146,24 @@ require(['vs/editor/editor.main'], function () {
         }
     })
 
-    monaco.editor.defineTheme('avrThemeLight', {
+    monaco.languages.registerDefinitionProvider('avr', {
+        provideDefinition: function (model, position) {
+            const wordAtPosition = model.getWordAtPosition(position);
+            if (!wordAtPosition) return;
+
+            for (let i = 0; i < model.getLineCount(); i++) {
+                const lineContent = model.getLineContent(i + 1);
+                if (lineContent.trim().startsWith(wordAtPosition.word + ':')) {
+                    return {
+                        uri: model.uri,
+                        range: new monaco.Range(i + 1, 1, i + 1, lineContent.length)
+                    }
+                }
+            }
+        }
+    })
+
+    monaco.editor.defineTheme('avrLight', {
         base: 'vs',
         inherit: true,
         rules: [
@@ -176,7 +193,7 @@ require(['vs/editor/editor.main'], function () {
         }
     })
 
-    monaco.editor.defineTheme('avrThemeDark', {
+    monaco.editor.defineTheme('avrDark', {
         base: 'vs-dark',
         inherit: true,
         rules: [
@@ -212,7 +229,7 @@ require(['vs/editor/editor.main'], function () {
         scrollBeyondLastLine: false,
         overviewRulerLanes: 0,
         language: 'avr',
-        theme: 'avrThemeLight',
+        theme: 'avrLight',
         value: localStorage.getItem('editorContent') || [
             '.section .data',
             '',

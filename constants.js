@@ -514,6 +514,19 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd ⊕ Rr`,
+    ICALL: `Syntax:   ICALL
+      Family:   Branch Instructions
+      Function: Calls to a subroutine within the entire 4M (words) Program memory. The return address (to the instruction after the CALL) will be stored onto the Stack. See also RCALL. The Stack Pointer uses a post-decrement scheme during CALL. This instruction is not available in all devices. Refer to the device specific instruction set summary.
+      Operations:
+      PC = Z(15:0)
+      SP = SP - 2
+      STACK ← PC + 1`,
+    IJMP: `
+      Syntax:   IJMP
+      Family:   Branch Instructions
+      Function: Indirect jump to the address pointed to by the Z (16 bits) Pointer Register in the Register File. The Zpointer Register is 16 bits wide and allows jump within the lowest 64K words (128KB) section of Program memory. This instruction is not available in all devices. Refer to the device specific instruction set summary.
+      Operation:
+      PC = Z(15:0)`,
     IN: `
       Syntax:   IN Rd, A
       Family:   Data Transfer Instructions
@@ -790,6 +803,16 @@ export const basicAvrManual = {
   
       Operation:
       PC(15:0) ← STACK`,
+    RCALL: `
+      Syntax:   RCALL k
+      Family:   Branch Instructions
+      Function: Relative call to an address within PC - 2047 and PC + 2048 (words)
+      Boundaries:
+      k → [-2048 - 2047]
+      Operation:
+      PC = PC + k + 1
+      SP = SP - 2
+      STACK ← PC + 1`,
     RJMP: `
       Syntax:   RJMP k
       Family:   Branch Instructions
@@ -1291,5 +1314,6 @@ export const basicAvrManual = {
     '.ascii',
     '.asciz',
     '.space',
-    '.def'
+    '.def',
+    '.word'
   ]

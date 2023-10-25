@@ -4910,6 +4910,7 @@ class App {
             muted_text_colour = '#aaa';
 
             document.getElementById('button_theme').innerHTML = 'Theme: Dark';
+            window.editor._themeService.setTheme('avrDark')
         } else {
             this.theme = 'light';
             bg = '#fff';
@@ -4924,6 +4925,7 @@ class App {
             muted_text_colour = '#777';
 
             document.getElementById('button_theme').innerHTML = 'Theme: Light';
+            window.editor._themeService.setTheme('avrLight')
         }
 
         document.body.style.backgroundColor = bg;
