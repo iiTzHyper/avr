@@ -88,13 +88,15 @@ function validateInstruction(instruction, operand, line) {
             const providedTokenValue = tok.getValue();
 
             if (!legalTokenType.includes(providedTokenType)) {
-                const prettyType = Array.isArray(legalTokenType) ? legalTokenType.join(" OR ") : legalTokenType;
-                return {
-                    valid: false,
-                    message: `Expected type ${prettyType}, but got ${providedTokenType}`,
-                    position: line.indexOf(providedTokenValue) + 1,
-                    length: providedTokenValue.length
-                };
+                if (!legalTokenType.includes("INT") || providedTokenType != "REF") {
+                    const prettyType = Array.isArray(legalTokenType) ? legalTokenType.join(" OR ") : legalTokenType;
+                    return {
+                        valid: false,
+                        message: `Expected type ${prettyType}, but got ${providedTokenType}`,
+                        position: line.indexOf(providedTokenValue) + 1,
+                        length: providedTokenValue.length
+                    };
+                }
             }
 
             if (rule.hasValueRange()) {
@@ -157,23 +159,32 @@ function checkSyntax(model) {
     const lines = text.split('\n');
     const markers = [];
 
-    if (!lines[0].startsWith(".section")) {
+    let realFirstIndex = 0;
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].trim() == "") continue;
+        if (lines[i].trim().startsWith(";")) continue;
+
+        realFirstIndex = i;
+        break;
+    }
+
+    if (!lines[realFirstIndex].startsWith(".section")) {
         markers.push({
-            startLineNumber: 1,
+            startLineNumber: realFirstIndex + 1,
             startColumn: 1,
-            endLineNumber: 2,
-            endColumn: lines[0].length + 1,
+            endLineNumber: realFirstIndex + 2,
+            endColumn: lines[realFirstIndex].length + 1,
             severity: 8, // ERROR
             message: "First line must be a '.section' directive."
         });
     }
 
-    if (lines[0].trim() !== ".section .data" || !lines[0].trim() == ".section .text") {
+    if (lines[realFirstIndex].trim() !== ".section .data" || !lines[realFirstIndex].trim() == ".section .text") {
         markers.push({
-            startLineNumber: 1,
+            startLineNumber: realFirstIndex + 1,
             startColumn: 1,
-            endLineNumber: 2,
-            endColumn: lines[0].length + 1,
+            endLineNumber: realFirstIndex + 2,
+            endColumn: lines[realFirstIndex].length + 1,
             severity: 8, // ERROR
             message: "First line must be either '.section .data' or '.section .text'."
         });
@@ -194,7 +205,7 @@ function checkSyntax(model) {
         const line = lines[i];
         let tokens = line.trim().split(/[\s,]+/);
         let inst = tokens[0].toUpperCase();
-        
+
         let operands = tokens.slice(1);
         for (let i = 0; i < operands.length; i++) {
             if (operands[i] == "," || operands[i] == "") {

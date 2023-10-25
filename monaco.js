@@ -3,9 +3,12 @@ import { checkSyntax } from "./validate.js";
 
 require.config({ paths: { vs: 'monaco-editor/min/vs' } });
 require(['vs/editor/editor.main'], function () {
-    monaco.languages.register({
-        id: 'avr'
-    });
+    monaco.languages.register({ id: 'avr' });
+    monaco.languages.setLanguageConfiguration('avr', {
+        comments: {
+            lineComment: ';'
+        }
+    })
 
     monaco.languages.setMonarchTokensProvider('avr', {
         ignoreCase: true,
