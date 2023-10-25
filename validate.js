@@ -110,7 +110,7 @@ function validateInstruction(instruction, operand, line, modelValue) {
                     }
 
                     const labelRef = providedTokenValue;
-                    const labelRegex = new RegExp(`^\\s*${labelRef}\\s*:$`, "g");
+                    const labelRegex = new RegExp(`^\\s*${labelRef}\\s*:\\s*$`, "gm");
 
                     if (!modelValue.match(labelRegex)) {
                         return {
