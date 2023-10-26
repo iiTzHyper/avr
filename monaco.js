@@ -13,7 +13,6 @@ require(['vs/editor/editor.main'], function () {
 
     monaco.languages.setMonarchTokensProvider('avr', {
         ignoreCase: true,
-        defaultToken: "invalid",
         avrInstructions: instructionSet,
         functions: functions,
         registers: registers,
@@ -35,7 +34,7 @@ require(['vs/editor/editor.main'], function () {
                 [/\.(section|text|data|global|end)/, 'directives'],
 
                 // Data type
-                [/\.(byte|word|string|ascii|asciz|space|def)/, 'type'],
+                [/\.(byte|word|string|ascii|asciz|space)/, 'type'],
 
                 // Numbers
                 [/\b0[xX][0-9a-fA-F]+\b/, "number.hex"],

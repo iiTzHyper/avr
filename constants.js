@@ -1,5 +1,5 @@
 export const basicAvrManual = {
-  ADC: `
+    ADC: `
       Syntax:   ADC Rd, Rr
       Family:   Arithmetic Instructions
       Function: Adds both registers and the value of the C flag together
@@ -10,7 +10,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd + Rr + C`,
-  ADD: `
+    ADD: `
       Syntax: ADD Rd, Rr
       Family: Arithmetic Instructions
       Function: Adds both registers together
@@ -21,7 +21,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd + Rr`,
-  ADIW: `
+    ADIW: `
       Syntax:   ADIW Rd, K
       Family:   Arithmetic Instructions
       Function: Adds K to the word register Rd+1:Rd
@@ -36,7 +36,7 @@ export const basicAvrManual = {
       Example:
       ADIW R24, 15
       → R25:R24 = R25:R24 + 15`,
-  AND: `
+    AND: `
       Syntax:   AND Rd, Rr
       Family:   Logic Instructions
       Function: Performs the logical AND on the bit values of Rd and Rr
@@ -47,7 +47,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd • Rr`,
-  ANDI: `
+    ANDI: `
       Syntax:   ANDI Rd, K
       Family:   Logic Instructions
       Function: Performs the logical AND on the bit values of Rd and K
@@ -58,7 +58,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd • K`,
-  ASR: `
+    ASR: `
       Syntax:   ASR Rd
       Family:   Bit & Bit Test Instructions
       Function: Shifts every bit to the right. Bit 7 doesnt change. Bit 0 goes into C flag.
@@ -75,7 +75,7 @@ export const basicAvrManual = {
       ASR R20 (where R20 = 10010011 = 147)
       → C = 1
       → R20 = 11001001 = 201`,
-  BCLR: `
+    BCLR: `
       Syntax:   BCLR s
       Family:   Bit & Bit Test Instructions
       Function: Clears a single flag in the SREG
@@ -85,7 +85,7 @@ export const basicAvrManual = {
   
       Operation:
       SREG(s) = 0`,
-  BLD: `Syntax:   BLD Rd, b
+    BLD: `Syntax:   BLD Rd, b
       Family:   Bit & Bit Test Instructions
       Function: Loads the value of the SREG T flag into bit b of Rd
   
@@ -95,7 +95,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd(b) = T`,
-  BRBC: `
+    BRBC: `
       Syntax:   BRBC s, k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG bit s is cleared (SREG(s) = 0)
@@ -107,7 +107,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if SREG(s) = 0 }
       PC = PC + 1 { else }`,
-  BRBS: `
+    BRBS: `
       Syntax:   BRBS s, k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG bit s is set (SREG(s) = 1)
@@ -119,7 +119,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if SREG(s) = 1 }
       PC = PC + 1 { else }`,
-  BRCC: `
+    BRCC: `
       Syntax:   BRCC k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG carry flag is cleared (C = 0)
@@ -129,7 +129,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if C = 0 }
       PC = PC + 1 { else }`,
-  BRCS: `
+    BRCS: `
       Syntax:   BRCS k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG carry flag is set (C = 1)
@@ -140,7 +140,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if C = 1 }
       PC = PC + 1 { else }`,
-  BREQ: `
+    BREQ: `
       Syntax:   BREQ k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG zero flag is set (Z = 1)
@@ -151,7 +151,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if Z = 1 }
       PC = PC + 1 { else }`,
-  BRGE: `
+    BRGE: `
       Syntax:   BRGE k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG signed flag is cleared (S = 0)
@@ -162,7 +162,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if S = 0 }
       PC = PC + 1 { else }`,
-  BRHC: `
+    BRHC: `
       Syntax:   BRHC k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG half carry flag is cleared (H = 0)
@@ -173,7 +173,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if H = 0 }
       PC = PC + 1 { else }`,
-  BRHS: `
+    BRHS: `
       Syntax:   BRHS k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG half carry flag is set (H = 1)
@@ -184,7 +184,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if H = 1 }
       PC = PC + 1 { else }`,
-  BRID: `
+    BRID: `
       Syntax:   BRID k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG interrupt flag is cleared (I = 0)
@@ -195,7 +195,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if I = 0 }
       PC = PC + 1 { else }`,
-  BRIE: `
+    BRIE: `
       Syntax:   BRHC k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG interrupt flag is set (I = 1)
@@ -206,7 +206,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if I = 1 }
       PC = PC + 1 { else }`,
-  BRLO: `
+    BRLO: `
       Syntax:   BRLO k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG carry flag is set (C = 1)
@@ -217,7 +217,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if C = 1 }
       PC = PC + 1 { else }`,
-  BRLT: `
+    BRLT: `
       Syntax:   BRLT k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG signed flag is set (S = 1)
@@ -228,7 +228,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if S = 1 }
       PC = PC + 1 { else }`,
-  BRMI: `
+    BRMI: `
       Syntax:   BRMI k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG negative flag is set (N = 1)
@@ -239,7 +239,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if N = 1 }
       PC = PC + 1 { else }`,
-  BRNE: `
+    BRNE: `
       Syntax:   BRNE k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG zero flag is cleared (Z = 0)
@@ -250,7 +250,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if Z = 0 }
       PC = PC + 1 { else }`,
-  BRPL: `
+    BRPL: `
       Syntax:   BRPL k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG negative flag is cleared (N = 0)
@@ -261,7 +261,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if N = 0 }
       PC = PC + 1 { else }`,
-  BRSH: `
+    BRSH: `
       Syntax:   BRSH k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG carry flag is cleared (C = 0)
@@ -272,7 +272,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if C = 0 }
       PC = PC + 1 { else }`,
-  BRTC: `
+    BRTC: `
       Syntax:   BRTC k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG transfer flag is cleared (T = 0)
@@ -283,7 +283,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if T = 0 }
       PC = PC + 1 { else }`,
-  BRTS: `
+    BRTS: `
       Syntax:   BRTS k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG transfer flag is set (T = 1)
@@ -294,7 +294,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if T = 1 }
       PC = PC + 1 { else }`,
-  BRVC: `
+    BRVC: `
       Syntax:   BRVC k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG overflow flag is cleared (V = 0)
@@ -305,7 +305,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if V = 0 }
       PC = PC + 1 { else }`,
-  BRVS: `
+    BRVS: `
       Syntax:   BRVS k
       Family:   Branch Instructions
       Function: Brach k spaces in PMEM if SREG overflow flag is set (V = 1)
@@ -316,7 +316,7 @@ export const basicAvrManual = {
       Operations:
       PC = PC + k + 1 { if V = 1 }
       PC = PC + 1 { else }`,
-  BSET: `
+    BSET: `
       Syntax:   BSET s
       Family:   Bit & Bit Test Instructions
       Function: Sets a single flag in the SREG
@@ -326,7 +326,7 @@ export const basicAvrManual = {
   
       Operation:
       SREG(s) = 1`,
-  BST: `
+    BST: `
       Syntax:   BST Rd, b
       Family:   Bit & Bit Test Instructions
       Function: Stores the value of Rd bit b into the SREG T flag
@@ -337,7 +337,7 @@ export const basicAvrManual = {
   
       Operation:
       T = Rd(b)`,
-  CALL: `
+    CALL: `
       Syntax:   CALL k
       Family:   Branch Instructions
       Function: Calls to a subroutine within the entire Program memory. The return address (to the instruction after the CALL) will be stored onto the Stack. The Stack Pointer uses a post-decrement scheme during CALL.
@@ -349,7 +349,7 @@ export const basicAvrManual = {
       PC = k
       SP = SP - 2
       STACK ← PC + 2`,
-  CBI: `
+    CBI: `
       Syntax:   CBI A, b
       Family:   Bit & Bit Test Instructions
       Function: Clears a specified bit in an I/O register. This instruction operates on the lower 32 I/O registers with addresses 0-31.
@@ -360,7 +360,7 @@ export const basicAvrManual = {
   
       Operation:
       I/O(A, b) = 0`,
-  CBR: `
+    CBR: `
       Syntax:   CBR Rd, K
       Family:   Logic Instructions
       Function: Clears the bits of Rd that correspond to the 1's in the binary value of K. CBR does this by performing the logical AND between Rd and the complement of K.
@@ -371,35 +371,35 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd • (255 - K)`,
-  CLC: `
+    CLC: `
       Syntax:   CLC
       Family:   Bit & Bit Test Instructions
       Function: Clears the carry flag (C) in the SREG
   
       Operation:
       C = 0`,
-  CLH: `
+    CLH: `
       Syntax:   CLH
       Family:   Bit & Bit Test Instructions
       Function: Clears the half carry flag (H) in the SREG
   
       Operation:
       H = 0`,
-  CLI: `
+    CLI: `
       Syntax:   CLI
       Family:   Bit & Bit Test Instructions
       Function: Clears the global interrupt flag (I) in the SREG
   
       Operation:
       I = 0`,
-  CLN: `
+    CLN: `
       Syntax:   CLN
       Family:   Bit & Bit Test Instructions
       Function: Clears the negative flag (N) in the SREG
   
       Operation:
       N = 0`,
-  CLR: `
+    CLR: `
       Syntax:   CLR Rd
       Family:   Logic Instructions
       Function: Clears a register. This instruction performs an Exclusive OR between a register and itself. This will clear all bits in the register.
@@ -409,35 +409,35 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd ⊕ Rd`,
-  CLS: `
+    CLS: `
       Syntax:   CLS
       Family:   Bit & Bit Test Instructions
       Function: Clears the signed flag (S) in the SREG
   
       Operation:
       S = 0`,
-  CLT: `
+    CLT: `
       Syntax:   CLT
       Family:   Bit & Bit Test Instructions
       Function: Clears the transfer bit flag (T) in the SREG
   
       Operation:
       T = 0`,
-  CLV: `
+    CLV: `
       Syntax:   CLV
       Family:   Bit & Bit Test Instructions
       Function: Clears the overflow flag (V) in the SREG
   
       Operation:
       V = 0`,
-  CLZ: `
+    CLZ: `
       Syntax:   CLZ
       Family:   Bit & Bit Test Instructions
       Function: Clears the zero flag (Z) in the SREG
   
       Operation:
       Z = 0`,
-  COM: `
+    COM: `
       Syntax:   COM Rd
       Family:   Logic Instructions
       Function: Performs a ones complement of register Rd
@@ -447,7 +447,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = 255 - Rd`,
-  CP: `
+    CP: `
       Syntax:   CP Rd, Rr
       Family:   Branch Instructions
       Function: Performs a compare between two registers Rd and Rr. None of the registers are changed. All conditional branches can be used after this instruction.
@@ -458,7 +458,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd - Rr (not stored back into any register)`,
-  CPC: `
+    CPC: `
       Syntax:   CPC Rd, Rr
       Family:   Branch Instructions
       Function: Performs a compare between two registers Rd and Rr and also takes into account the previous carry. None of the registers are changed. All conditional branches can be used after this instruction.                    
@@ -469,7 +469,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd - Rr - C (not stored back into any register)`,
-  CPI: `
+    CPI: `
       Syntax:   CPI Rd, K
       Family:   Branch Instructions
       Function: Performs a compare between register Rd and a constant. The register is not changed. All conditional branches can be used after this instruction.
@@ -480,7 +480,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd - K (not stored back into any register)`,
-  CPSE: `
+    CPSE: `
       Syntax:   CPSE Rd, Rr
       Family:   Branch Instructions
       Function: Performs a compare between two registers Rd and Rr, and skips the next instruction if Rd = Rr
@@ -493,7 +493,7 @@ export const basicAvrManual = {
       PC = PC + 1 { if Rd != Rr }
       PC = PC + 2 { if Rd = Rr and the next instruction is 16 bits }
       PC = PC + 3 { if Rd = Rr and the next instruction is 32 bits }`,
-  DEC: `
+    DEC: `
       Syntax:   DEC Rd
       Family:   Arithmetic Instructions
       Function: Subtracts 1 from the contents of register Rd and places the result in the destination register Rd. The C flag in SREG is not affected by the operation.
@@ -503,7 +503,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd - 1`,
-  EOR: `
+    EOR: `
       Syntax:   EOR Rd, Rr
       Family:   Logic Instructions
       Function: Performs the logical EOR between the contents of register Rd and register Rr and places the result in the destination register Rd
@@ -514,20 +514,20 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd ⊕ Rr`,
-  ICALL: `Syntax:   ICALL
+    ICALL: `Syntax:   ICALL
       Family:   Branch Instructions
       Function: Calls to a subroutine within the entire 4M (words) Program memory. The return address (to the instruction after the CALL) will be stored onto the Stack. See also RCALL. The Stack Pointer uses a post-decrement scheme during CALL. This instruction is not available in all devices. Refer to the device specific instruction set summary.
       Operations:
       PC = Z(15:0)
       SP = SP - 2
       STACK ← PC + 1`,
-  IJMP: `
+    IJMP: `
       Syntax:   IJMP
       Family:   Branch Instructions
       Function: Indirect jump to the address pointed to by the Z (16 bits) Pointer Register in the Register File. The Zpointer Register is 16 bits wide and allows jump within the lowest 64K words (128KB) section of Program memory. This instruction is not available in all devices. Refer to the device specific instruction set summary.
       Operation:
       PC = Z(15:0)`,
-  IN: `
+    IN: `
       Syntax:   IN Rd, A
       Family:   Data Transfer Instructions
       Function: Loads data from the I/O space (ports, timers, configuration registers, etc.) into register Rd in the register file
@@ -538,7 +538,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = I/O(A)`,
-  INC: `
+    INC: `
       Syntax:   INC Rd
       Family:   Arithmetic Instructions
       Function: Adds 1 to the contents of register Rd and places the result in the destination register Rd. The C flag in SREG is not affected by the operation.
@@ -548,7 +548,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd + 1`,
-  JMP: `
+    JMP: `
       Syntax:   JMP k
       Family:   Branch Instructions
       Function: Jump to an address within the entire program memory. See also RJMP. This instruction is not available in all devices. Refer to the device specific instruction set summary.
@@ -558,7 +558,7 @@ export const basicAvrManual = {
   
       Operation:
       PC = k`,
-  LD_X: `
+    LD_X: `
       Syntax: (i) LD Rd, X
       &emsp;&emsp;&emsp;&ensp;(ii) LD Rd, X+
       &emsp;&emsp;&emsp;&nbsp;(iii) LD Rd, -X
@@ -572,7 +572,7 @@ export const basicAvrManual = {
       (i) &ensp;Rd ← (X)
       (ii)&ensp;Rd ← (X), X = X + 1
       (iii) X = X - 1, Rd ← (X)`,
-  LD_Y: `
+    LD_Y: `
       Syntax: (i) LD Rd, Y
       &emsp;&emsp;&emsp;&ensp;(ii) LD Rd, Y+
       &emsp;&emsp;&emsp;&nbsp;(iii) LD Rd, -Y
@@ -586,7 +586,7 @@ export const basicAvrManual = {
       (i) &ensp;Rd ← (Y)
       (ii)&ensp;Rd ← (Y), Y = Y + 1
       (iii) Y = Y - 1, Rd ← (Y)`,
-  LD_Z: `
+    LD_Z: `
       Syntax: (i) LD Rd, Z
       &emsp;&emsp;&emsp;&ensp;(ii) LD Rd, Z+
       &emsp;&emsp;&emsp;&nbsp;(iii) LD Rd, -Z
@@ -600,7 +600,7 @@ export const basicAvrManual = {
       (i) &ensp;Rd ← (Z)
       (ii)&ensp;Rd ← (Z), Z = Z + 1
       (iii) Z = Z - 1, Rd ← (Z)`,
-  LDD: `
+    LDD: `
       Syntax: (i) LDD Rd, Y+q
       &emsp;&emsp;&emsp;&ensp;(ii) LDD Rd, Z+q
       Family: Data Transfer Instructions
@@ -613,7 +613,7 @@ export const basicAvrManual = {
       Operation Options:
       (i)&ensp;Rd ← (Y+q) 
       (ii) Rd ← (Z+q)`,
-  LDI: `
+    LDI: `
       Syntax: LDI Rd, K
       Family: Data Transfer Instructions
       Function: Loads an 8-bit constant directly to register 16 to 31
@@ -624,7 +624,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = K`,
-  LDS: `
+    LDS: `
       Syntax: LDS Rd, k
       Family: Data Transfer Instructions
       Function: Loads one byte indirect from data memory into register Rd using k as a pointer
@@ -635,7 +635,19 @@ export const basicAvrManual = {
   
       Operation:
       Rd ← (k)`,
-  LSL: `
+    LPM: `
+      Syntax: (i) LPM
+      &emsp;&emsp;&emsp;&ensp;(ii) LPM Rd, Z
+      &emsp;&emsp;&emsp;&nbsp;(iii) LPM Rd, Z+
+      Family:   Data Transfer Instructions
+      Function: Loads one byte pointed to by the Z-register into the destination register Rd. Can post-increment Z with the Z+ variant.
+      Boundaries:
+      Rd → [R0 - R31]
+      Operation Options:
+      (i) &ensp;R0 ← (Z)
+      (ii) &ensp;Rd ← (Z)
+      (iii)&ensp;Rd ← (Z), Z = Z + 1`,
+    LSL: `
       Syntax:   LSL Rd
       Family:   Bit & Bit Test Instructions
       Function: Shifts all bits in Rd one place to the left. Bit 0 is cleared. Bit 7 is loaded into the C flag of the SREG. This operation effectively multiplies signed and unsigned values by two.
@@ -652,7 +664,7 @@ export const basicAvrManual = {
       LSL R20 (where R20 = 10010011 = 147)
       → C = 1
       → R20 = 00100110 = 38`,
-  LSR: `
+    LSR: `
       Syntax:   LSR Rd
       Family:   Bit & Bit Test Instructions
       Function: Shifts all bits in Rd one place to the right. Bit 7 is cleared. Bit 0 is loaded into the C flag of the SREG. This operation effectively divides an unsigned value by two. The C flag can be used to round the result.
@@ -669,7 +681,7 @@ export const basicAvrManual = {
       LSR R20 (where R20 = 10010011 = 147)
       → C = 1
       → R20 = 01001001 = 73`,
-  MOV: `
+    MOV: `
       Syntax: MOV Rd, Rr
       Family: Data Transfer Instructions
       Function: Makes a copy of one register into another. The source register Rr is left unchanged, while the destination register Rd is loaded with a copy of Rr.
@@ -680,7 +692,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rr`,
-  MOVW: `
+    MOVW: `
       Syntax: MOVW Rd, Rr
       Family: Data Transfer Instructions
       Function: Makes a copy of one register pair into another register pair. The source register pair Rr+1:Rr is left unchanged, while the destination register pair Rd+1:Rd is loaded with a copy of Rr+1:Rr.
@@ -691,7 +703,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd+1:Rd = Rr+1:Rr`,
-  MUL: `
+    MUL: `
       Syntax:   MUL Rd, Rr
       Family:   Arithmetic Instructions
       Function: This instruction performs 8-bit x 8-bit → 16-bit unsigned multiplication. The resulting value is stored in R1:R0.
@@ -702,7 +714,7 @@ export const basicAvrManual = {
   
       Operation:
       R1:R0 ← Rd x Rr (unsigned ← unsigned x unsigned)`,
-  MULS: `
+    MULS: `
       Syntax:   MULS Rd, Rr
       Family:   Arithmetic Instructions
       Function: This instruction performs 8-bit x 8-bit → 16-bit signed multiplication. The resulting value is stored in R1:R0.
@@ -713,7 +725,7 @@ export const basicAvrManual = {
   
       Operation:
       R1:R0 ← Rd x Rr (signed ← signed x signed)`,
-  MULSU: `
+    MULSU: `
       Syntax:   MULS Rd, Rr
       Family:   Arithmetic Instructions
       Function: This instruction performs 8-bit x 8-bit → 16-bit multiplication of a signed and an unsigned number. The resulting value is stored in R1:R0.
@@ -724,7 +736,7 @@ export const basicAvrManual = {
   
       Operation:
       R1:R0 ← Rd x Rr (signed ← signed x unsigned)`,
-  NEG: `
+    NEG: `
       Syntax:   NEG Rd
       Family:   Logic Instructions
       Function: Performs a twos complement of register Rd. The value 128 is left unchanged.
@@ -734,14 +746,14 @@ export const basicAvrManual = {
   
       Operation:
       Rd = 0 - Rd`,
-  NOP: `
+    NOP: `
       Syntax:   NOP
       Family:   MCU Control Instructions
       Function: Performs a single cycle no operation
   
       Operation:
       No operation`,
-  OR: `
+    OR: `
       Syntax: OR Rd, Rr
       Family: Logic Instructions
       Function: Performs the logical OR on the bit values of Rd and Rr
@@ -752,7 +764,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd ∨ Rr`,
-  ORI: `
+    ORI: `
       Syntax: ORI Rd, K
       Family: Logic Instructions
       Function: Performs the logical OR on the bit values of Rd and K
@@ -763,7 +775,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd ∨ K`,
-  OUT: `
+    OUT: `
       Syntax:   OUT A, Rr
       Family:   Data Transfer Instructions
       Function: Stores data into the I/O space (ports, timers, configuration registers, etc.) from register Rr in the register file
@@ -774,7 +786,7 @@ export const basicAvrManual = {
   
       Operation:
       I/O(A) = Rr`,
-  POP: `
+    POP: `
       Syntax:   POP Rd
       Family:   Data Transfer Instructions
       Function: Loads register Rd with a byte from the STACK. The Stack Pointer is pre-incremented by 1 before the POP.
@@ -785,7 +797,7 @@ export const basicAvrManual = {
       Operation:
       SP = SP + 1
       Rd ← STACK (top value from the stack)`,
-  PUSH: `
+    PUSH: `
       Syntax:   PUSH Rr
       Family:   Data Transfer Instructions
       Function: Stores the contents of register Rr on the STACK. The Stack Pointer is post-decremented by 1 after the PUSH.
@@ -796,14 +808,14 @@ export const basicAvrManual = {
       Operation:
       STACK ← Rr (Rr onto the top of the stack)
       SP = SP - 1`,
-  RET: `
+    RET: `
       Syntax:   RET
       Family:   Branch Instructions
       Function: Returns from subroutine. The return address is loaded from the STACK. The Stack Pointer uses a preincrement scheme during RET.
   
       Operation:
       PC(15:0) ← STACK`,
-  RCALL: `
+    RCALL: `
       Syntax:   RCALL k
       Family:   Branch Instructions
       Function: Relative call to an address within PC - 2047 and PC + 2048 (words)
@@ -813,7 +825,7 @@ export const basicAvrManual = {
       PC = PC + k + 1
       SP = SP - 2
       STACK ← PC + 1`,
-  RJMP: `
+    RJMP: `
       Syntax:   RJMP k
       Family:   Branch Instructions
       Function: Relative jump to an address within PC - 2047 and PC + 2048 (words)
@@ -823,7 +835,7 @@ export const basicAvrManual = {
   
       Operation:
       PC = PC + k + 1`,
-  ROL: `
+    ROL: `
       Syntax:   ROL Rd
       Family:   Bit & Bit Test Instructions
       Function: Shifts all bits in Rd one place to the left. The C flag is shifted into bit 0 of Rd. Bit 7 is shifted into the C flag. This operation, combined with LSL, effectively multiplies multi-byte signed and unsigned values by two.
@@ -844,7 +856,7 @@ export const basicAvrManual = {
       ROL R20 (where R20 = 00010011 = 19 and C = 1)
       → C = 0
       → R20 = 00100111 = 39`,
-  ROR: `
+    ROR: `
       Syntax:   ROR Rd
       Family:   Bit & Bit Test Instructions
       Function: Shifts all bits in Rd one place to the right. The C flag is shifted into bit 7 of Rd. Bit 0 is shifted into the C flag. This operation, combined with ASR, effectively divides multi-byte signed values by two. Combined with LSR it effectively divides multi-byte unsigned values by two. The carry flag can be used to round the result.
@@ -865,7 +877,7 @@ export const basicAvrManual = {
       ROR R20 (where R20 = 00010010 = 18 and C = 1)
       → C = 0
       → R20 = 10001001 = 137`,
-  SBC: `
+    SBC: `
       Syntax:   SBC Rd, Rr
       Family:   Arithmetic Instructions
       Function: Subtracts two registers and subtracts with the C flag
@@ -876,7 +888,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd - Rr - C`,
-  SBCI: `
+    SBCI: `
       Syntax:   SBC Rd, K
       Family:   Arithmetic Instructions
       Function: Subtracts a constant from a register and subtracts with the C flag
@@ -887,7 +899,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd - K - C`,
-  SBI: `
+    SBI: `
       Syntax:   SBI A, b
       Family:   Bit & Bit Test Instructions
       Function: Sets a specified bit in an I/O register. This instruction operates on the lower 32 I/O registers with addresses 0-31.
@@ -898,7 +910,7 @@ export const basicAvrManual = {
   
       Operation:
       I/O(A, b) = 1`,
-  SBIW: `
+    SBIW: `
       Syntax:   SBIW Rd, K
       Family:   Arithmetic Instructions
       Function: Subtracts K from the word register Rd+1:Rd
@@ -913,7 +925,7 @@ export const basicAvrManual = {
       Example:
       SBIW R24, 15
       → R25:R24 = R25:R24 - 15`,
-  SBR: `
+    SBR: `
       Syntax: SBR Rd, K
       Family: Logic Instructions
       Function: Performs the logical OR on the bit values of Rd and K
@@ -924,7 +936,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd ∨ K`,
-  SBRC: `
+    SBRC: `
       Syntax:   SBRC Rr, b
       Family:   Branch Instructions
       Function: Tests a single bit in a register and skips the next instruction if the bit is cleared
@@ -937,7 +949,7 @@ export const basicAvrManual = {
       PC = PC + 1 { if Rr(b) = 1 }
       PC = PC + 2 { if Rr(b) = 0 and the next instruction is 16 bits }
       PC = PC + 3 { if Rr(b) = 0 and the next instruction is 32 bits }`,
-  SBRS: `
+    SBRS: `
       Syntax:   SBRS Rr, b
       Family:   Branch Instructions
       Function: Tests a single bit in a register and skips the next instruction if the bit is set
@@ -950,35 +962,35 @@ export const basicAvrManual = {
       PC = PC + 1 { if Rr(b) = 0 }
       PC = PC + 2 { if Rr(b) = 1 and the next instruction is 16 bits }
       PC = PC + 3 { if Rr(b) = 1 and the next instruction is 32 bits }`,
-  SEC: `
+    SEC: `
       Syntax:   SEC
       Family:   Bit & Bit Test Instructions
       Function: Sets the carry flag (C) in the SREG
   
       Operation:
       C = 1`,
-  SEH: `
+    SEH: `
       Syntax:   SEH
       Family:   Bit & Bit Test Instructions
       Function: Sets the half carry flag (H) in the SREG
   
       Operation:
       H = 1`,
-  SEI: `
+    SEI: `
       Syntax:   SEI
       Family:   Bit & Bit Test Instructions
       Function: Sets the global interrupt flag (I) in the SREG
   
       Operation:
       I = 1`,
-  SEN: `
+    SEN: `
       Syntax:   SEN
       Family:   Bit & Bit Test Instructions
       Function: Sets the negative flag (N) in the SREG
   
       Operation:
       N = 1`,
-  SER: `
+    SER: `
       Syntax:   SER
       Family:   Logic Instructions
       Function: Loads 255 directly to register Rd
@@ -988,35 +1000,35 @@ export const basicAvrManual = {
   
       Operation:
       Rd = 255`,
-  SES: `
+    SES: `
       Syntax:   SES
       Family:   Bit & Bit Test Instructions
       Function: Sets the signed flag (S) in the SREG
   
       Operation:
       S = 1`,
-  SET: `
+    SET: `
       Syntax:   SET
       Family:   Bit & Bit Test Instructions
       Function: Sets the transfer bit flag (T) in the SREG
   
       Operation:
       T = 1`,
-  SEV: `
+    SEV: `
       Syntax:   SEV
       Family:   Bit & Bit Test Instructions
       Function: Sets the overflow flag (V) in the SREG
   
       Operation:
       V = 1`,
-  SEZ: `
+    SEZ: `
       Syntax:   SEZ
       Family:   Bit & Bit Test Instructions
       Function: Sets the zero flag (Z) in the SREG
   
       Operation:
       Z = 1`,
-  ST_X: `
+    ST_X: `
       Syntax: (i) ST X, Rr
       &emsp;&emsp;&emsp;&ensp;(ii) ST X+, Rr
       &emsp;&emsp;&emsp;&nbsp;(iii) ST -X, Rr
@@ -1030,7 +1042,7 @@ export const basicAvrManual = {
       (i) &ensp;(X) ← Rr
       (ii)&ensp;(X) ← Rr, X = X + 1
       (iii) X = X - 1, (X) ← Rr`,
-  ST_Y: `
+    ST_Y: `
       Syntax: (i) ST Y, Rr
       &emsp;&emsp;&emsp;&ensp;(ii) ST Y+, Rr
       &emsp;&emsp;&emsp;&nbsp;(iii) ST -Y, Rr
@@ -1044,7 +1056,7 @@ export const basicAvrManual = {
       (i) &ensp;(Y) ← Rr
       (ii)&ensp;(Y) ← Rr, Y = Y + 1
       (iii) Y = Y - 1, (Y) ← Rr`,
-  ST_Z: `
+    ST_Z: `
       Syntax: (i) ST Z, Rr
       &emsp;&emsp;&emsp;&ensp;(ii) ST Z+, Rr
       &emsp;&emsp;&emsp;&nbsp;(iii) ST -Z, Rr
@@ -1058,7 +1070,7 @@ export const basicAvrManual = {
       (i) &ensp;(Z) ← Rr
       (ii)&ensp;(Z) ← Rr, Z = Z + 1
       (iii) Z = Z - 1, (Z) ← Rr`,
-  STD: `
+    STD: `
       Syntax: (i) LDD Y+q, Rr
       &emsp;&emsp;&emsp;&ensp;(ii) LDD Z+q, Rr
       Family: Data Transfer Instructions
@@ -1071,7 +1083,7 @@ export const basicAvrManual = {
       Operation Options:
       (i)&ensp;(Y+q) ← Rr 
       (ii) (z+q) ← Rr `,
-  STS: `
+    STS: `
       Syntax: STS k, Rr
       Family: Data Transfer Instructions
       Function: Stores the value of register Rr indirectly into data memory using k as a pointer
@@ -1082,7 +1094,7 @@ export const basicAvrManual = {
   
       Operation:
       (k) ← Rr`,
-  SUB: `
+    SUB: `
       Syntax: SUB Rd, Rr
       Family: Arithmetic Instructions
       Function: Subtracts one register from another
@@ -1093,7 +1105,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd - Rr`,
-  SUBI: `
+    SUBI: `
       Syntax:   SUBI Rd, K
       Family:   Arithmetic Instructions
       Function: Subtracts the constant K from the register Rd
@@ -1104,7 +1116,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd - K`,
-  SWAP: `
+    SWAP: `
       Syntax:   SWAP Rd
       Family:   Bit & Bit Test Instructions
       Function: Swaps the high and low 4 bits in a register
@@ -1119,7 +1131,7 @@ export const basicAvrManual = {
       Example:
       SWAP R20 (where R20 = 11110000 = 240)
       → R20 = 00001111 = 15`,
-  TST: `
+    TST: `
       Syntax:   TST Rd
       Family:   Logic Instructions
       Function: Tests if a register is zero or negative. Performs a logical AND between a register and itself. The register will remain unchanged.
@@ -1129,7 +1141,7 @@ export const basicAvrManual = {
   
       Operation:
       Rd = Rd • Rd`,
-  XCH: `
+    XCH: `
       Syntax:   XCH Z, Rd
       Family:   Data Transfer Instructions
       Function: Exchanges one byte indirect between register and data space using Z as a pointer to the data memory cell
@@ -1140,27 +1152,27 @@ export const basicAvrManual = {
       Operations:
       (Z) ← Rd
       Rd ← (Z)`,
-  PC: `
+    PC: `
       Program Counter
   
       The purpose of the program counter is to store what line of the PMEM to execute next. The line number will be highlighted in blue to help show what line.`,
-  SP: `
+    SP: `
       Stack Pointer
   
       The purpose of the stack pointer is to store the location of the top of the stack. In AVR the stack pointer points to the line above the top value on the stack.`,
-  X: `
+    X: `
       Definition: X means R27:R26 (two registers read as one 2 byte number)
       
       Calculation: Value of X = (R27 * 256) + R26
       
       Purpose: X is used to store the 2 byte address of a cell in DMEM. It is used in load and store instructions as a pointer to the relevant cell.`,
-  Y: `
+    Y: `
       Definition: Y means R29:R28 (two registers read as one 2 byte number)
       
       Calculation: Value of Y = (R29 * 256) + R28
       
       Purpose: Y is used to store the 2 byte address of a cell in DMEM. It is used in load and store instructions as a pointer to the relevant cell.`,
-  Z: `
+    Z: `
       Definition: Z means R31:R30 (two registers read as one 2 byte number)
       
       Calculation: Value of Z = (R31 * 256) + R30
@@ -1169,151 +1181,134 @@ export const basicAvrManual = {
 };
 
 export const instructionSet = [
-  "adc",
-  "add",
-  "adiw",
-  "and",
-  "andi",
-  "asr",
-  "bclr",
-  "bld",
-  "brbc",
-  "brbs",
-  "brcc",
-  "brcs",
-  "break",
-  "breq",
-  "brge",
-  "brhc",
-  "brhs",
-  "brid",
-  "brie",
-  "brlo",
-  "brlt",
-  "brmi",
-  "brne",
-  "brpl",
-  "brsh",
-  "brtc",
-  "brts",
-  "brvc",
-  "brvs",
-  "bset",
-  "bst",
-  "call",
-  "cbi",
-  "cbr",
-  "clc",
-  "clh",
-  "cli",
-  "cln",
-  "clr",
-  "cls",
-  "clt",
-  "clv",
-  "clz",
-  "com",
-  "cp",
-  "cpc",
-  "cpi",
-  "cpse",
-  "dec",
-  "des",
-  "eicall",
-  "eijmp",
-  "elpm",
-  "eor",
-  "fmul",
-  "fmuls",
-  "fmulsu",
-  "icall",
-  "ijmp",
-  "in",
-  "inc",
-  "jmp",
-  "lac",
-  "las",
-  "lat",
-  "ld",
-  "ldd",
-  "ldi",
-  "lds",
-  "lmp",
-  "lsl",
-  "lsr",
-  "mov",
-  "movw",
-  "mul",
-  "muls",
-  "mulsu",
-  "neg",
-  "nop",
-  "or",
-  "ori",
-  "out",
-  "pop",
-  "push",
-  "rcall",
-  "ret",
-  "reti",
-  "rjmp",
-  "rol",
-  "ror",
-  "sbc",
-  "sbci",
-  "sbi",
-  "sbic",
-  "sbis",
-  "sbiw",
-  "sbr",
-  "sbrc",
-  "sbrs",
-  "sec",
-  "seh",
-  "sei",
-  "sen",
-  "ser",
-  "ses",
-  "set",
-  "sev",
-  "sez",
-  "sleep",
-  "spm",
-  "st",
-  "std",
-  "sts",
-  "sub",
-  "subi",
-  "swap",
-  "tst",
-  "wdr",
-  "xch",
-];
+    'adc',
+    'add',
+    'adiw',
+    'and',
+    'andi',
+    'asr',
+    'bclr',
+    'bld',
+    'brbc',
+    'brbs',
+    'brcc',
+    'brcs',
+    'breq',
+    'brge',
+    'brhc',
+    'brhs',
+    'brid',
+    'brie',
+    'brlo',
+    'brlt',
+    'brmi',
+    'brne',
+    'brpl',
+    'brsh',
+    'brtc',
+    'brts',
+    'brvc',
+    'brvs',
+    'bset',
+    'bst',
+    'call',
+    'cbi',
+    'cbr',
+    'clc',
+    'clh',
+    'cli',
+    'cln',
+    'clr',
+    'cls',
+    'clt',
+    'clv',
+    'clz',
+    'com',
+    'cp',
+    'cpc',
+    'cpi',
+    'cpse',
+    'dec',
+    'eor',
+    'icall',
+    'ijmp',
+    'in',
+    'inc',
+    'jmp',
+    'ld',
+    'ldd',
+    'ldi',
+    'lds',
+    'lpm',
+    'lsl',
+    'lsr',
+    'mov',
+    'movw',
+    'mul',
+    'muls',
+    'mulsu',
+    'neg',
+    'nop',
+    'or',
+    'ori',
+    'out',
+    'pop',
+    'push',
+    'rcall',
+    'rjmp',
+    'ret',
+    'rol',
+    'ror',
+    'sbc',
+    'sbci',
+    'sbi',
+    'sbiw',
+    'sbr',
+    'sbrc',
+    'sbrs',
+    'sec',
+    'seh',
+    'sei',
+    'sen',
+    'ser',
+    'ses',
+    'set',
+    'sev',
+    'sez',
+    'st',
+    'std',
+    'sts',
+    'sub',
+    'subi',
+    'swap',
+    'tst',
+    'xch'
+]
 
 export const functions = [
-  'hi8',
-  'lo8',
-  'printf'
+    'hi8',
+    'lo8',
+    'printf'
 ]
 
 export const registers = [
-  "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9",
-  "r10", "r11", "r12", "r13", "r14", "r15", "r16", "r17", "r18", "r19",
-  "r20", "r21", "r22", "r23", "r24", "r25", "r26", "r27", "r28", "r29", "r30",
-  "r31"
+    "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9",
+    "r10", "r11", "r12", "r13", "r14", "r15", "r16", "r17", "r18", "r19",
+    "r20", "r21", "r22", "r23", "r24", "r25", "r26", "r27", "r28", "r29", "r30",
+    "r31"
 ]
 
 export const directives = [
-  '.section',
-  '.text',
-  '.data',
-  '.global',
-  '.end',
-  '.byte',
-  '.string',
-  '.ascii',
-  '.asciz',
-  '.space',
-  '.def',
-  '.word'
+    '.section',
+    '.text',
+    '.data',
+    '.global',
+    '.end',
+    '.byte',
+    '.string',
+    '.ascii',
+    '.asciz',
+    '.space',
+    '.set',
+    '.word'
 ]
