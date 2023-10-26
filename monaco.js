@@ -1,5 +1,5 @@
 import { basicAvrManual, instructionSet, functions, registers, directives } from "./constants.js";
-import { checkSyntax } from "./validate.js";
+import { checkSyntax, declaredLabels } from "./validate.js";
 import { declaredVariables } from "./validate.js";
 
 require.config({ paths: { vs: 'monaco-editor/min/vs' } });
@@ -92,6 +92,17 @@ require(['vs/editor/editor.main'], function () {
                 }
             }
 
+            console.log(declaredLabels)
+            if (declaredLabels.includes(hoveringWord.toLowerCase())) {
+                return {
+                    contents: [
+                        {
+                            value: `\`\`\`\n(reference) ${hoveringWord}\n\`\`\``
+                        }
+                    ]
+                }
+            }
+
             const lineContent = model.getLineContent(position.lineNumber);
             if (lineContent.trim().startsWith(hoveringWord) && lineContent.trim().endsWith(':')) {
                 return {
@@ -135,6 +146,20 @@ require(['vs/editor/editor.main'], function () {
                             label: register,
                             kind: monaco.languages.CompletionItemKind.Variable,
                             insertText: register
+                        }
+                    }),
+                    ...declaredVariables.map(varData => {
+                        return {
+                            label: varData.varName,
+                            kind: monaco.languages.CompletionItemKind.Variable,
+                            insertText: varData.varName
+                        }
+                    }),
+                    ...declaredLabels.map(label => {
+                        return {
+                            label: label,
+                            kind: monaco.languages.CompletionItemKind.Reference,
+                            insertText: label
                         }
                     })
                 ]

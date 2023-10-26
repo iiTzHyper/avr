@@ -1,4 +1,5 @@
 export const declaredVariables = [];
+export const declaredLabels = [];
 
 const simplifiedTokenize = (line) => {
     const tokens = [];
@@ -92,6 +93,12 @@ function validateInstruction(instruction, operand, line, modelValue) {
             const legalTokenType = rule.getTokenType();
             const providedTokenType = tok.getType();
             const providedTokenValue = tok.getValue();
+            
+            if (instruction === "CALL" && providedTokenType == "REF") {
+                return {
+                    valid: true
+                }
+            }
 
             if (!legalTokenType.includes(providedTokenType)) {
                 if (legalTokenType.includes("INT") && providedTokenType === "REF") {
@@ -192,31 +199,11 @@ function validateInstruction(instruction, operand, line, modelValue) {
 
 function checkSyntax(model) {
     const text = model.getValue();
+    processVariables(text);
+    processLabels(text);
+
     const lines = text.split('\n');
     const markers = [];
-
-    const variablesAreaRegex = /\.section\s+\.data\s+([\s\S]*?)(?=\.section)/;
-    const dataSection = text.match(variablesAreaRegex)?.[1];
-    if (!dataSection) return;
-
-    const potentialVariables = dataSection.split("\n")
-    for (let i = 0; i < potentialVariables.length; i++) {
-        const varMatch = potentialVariables[i].trim().match(/^([a-zA-Z_]\w*):\s*(\.byte|\.string|\.ascii|\.asciz|\.space|\.def)\s+((?:[^,]+(?:,\s*[^,]+)*)?)/);
-        if (!varMatch) continue;
-
-        const existingVarIndex = declaredVariables.findIndex(x => x.varName === varMatch[1]);
-        const varData = {
-            varName: varMatch[1],
-            varType: varMatch[2],
-            varValue: varMatch[3]
-        }
-
-        if (existingVarIndex === -1) {
-            declaredVariables.push(varData);
-        } else {
-            declaredVariables[existingVarIndex] = varData;
-        }
-    }
 
     let realFirstIndex = 0;
     for (let i = 0; i < lines.length; i++) {
@@ -282,13 +269,50 @@ function checkSyntax(model) {
                 startColumn: validationResult.position ?? 1,
                 endLineNumber: i + 1,
                 endColumn: validationResult.length ? validationResult.position + validationResult.length : line.length + 1,
-                severity: monaco.MarkerSeverity.Error,
+                severity: validationResult.severity ?? monaco.MarkerSeverity.Error,
                 message: validationResult.message
             });
         }
     }
 
     return markers;
+}
+
+function processVariables(text) {
+    const variablesAreaRegex = /\.section\s+\.data\s+([\s\S]*?)(?=\.section)/;
+    const dataSection = text.match(variablesAreaRegex)?.[1];
+    if (!dataSection) return;
+
+    const potentialVariables = dataSection.split("\n")
+    for (let i = 0; i < potentialVariables.length; i++) {
+        const varMatch = potentialVariables[i].trim().match(/^([a-zA-Z_]\w*):\s*(\.byte|\.string|\.ascii|\.asciz|\.space|\.def)\s+((?:[^,]+(?:,\s*[^,]+)*)?)/);
+        if (!varMatch) continue;
+
+        const existingVarIndex = declaredVariables.findIndex(x => x.varName === varMatch[1]);
+        const varData = {
+            varName: varMatch[1],
+            varType: varMatch[2],
+            varValue: varMatch[3]
+        }
+
+        if (existingVarIndex === -1) {
+            declaredVariables.push(varData);
+        } else {
+            declaredVariables[existingVarIndex] = varData;
+        }
+    }
+}
+
+function processLabels(text) {
+    const potentialLabels = text.split("\n");
+    for (let i = 0; i < potentialLabels.length; i++) {
+        const labelMatch = potentialLabels[i].trim().match(/^(?!\.)([a-zA-Z_]\w*)\s*:\s*(?=\s*$)/);
+        if (!labelMatch) continue;
+
+        if (!declaredLabels.includes(labelMatch[1])) {
+            declaredLabels.push(labelMatch[1]);
+        }
+    }
 }
 
 export { checkSyntax }
