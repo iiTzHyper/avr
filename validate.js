@@ -63,6 +63,9 @@ const simplifiedTokenize = (line) => {
             current_tok.setValue(parseInt(num));
         } else if (i > 0 && current_tok.getType() === 'INST' && !(i === 1 && tokens[i - 1].getType() === 'LABEL')) {
             current_tok.setType('REF');
+        } else if (i > 0  && !MATH.includes(current_tok.getType()) && tokens[i - 1].getType() === 'REF') {
+            tokens[i - 1].setValue(tokens[i - 1].getValue() + current_tok.getValue());
+            tokens.splice(i, 1); // Virtually advancing
         } else {
             i += 1;
         }
