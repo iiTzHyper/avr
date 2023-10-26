@@ -196,7 +196,8 @@ function checkSyntax(model) {
     const markers = [];
 
     const variablesAreaRegex = /\.section\s+\.data\s+([\s\S]*?)(?=\.section)/;
-    const dataSection = text.match(variablesAreaRegex)[1];
+    const dataSection = text.match(variablesAreaRegex)?.[1];
+    if (!dataSection) return;
 
     const potentialVariables = dataSection.split("\n")
     for (let i = 0; i < potentialVariables.length; i++) {
