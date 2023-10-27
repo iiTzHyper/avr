@@ -1,80 +1,6 @@
 export const declaredVariables = [];
 export const declaredLabels = [];
 
-const simplifiedTokenize = (line) => {
-    const tokens = [];
-
-    let pos = 0;
-
-    const PATTERNS = [
-        [/^;.*/, null],                      // comments
-        [/^\s+/, null],                      // whitespace
-        [/^[\w_]{1}[^;]*:/, 'LABEL'],        // labels
-        [/^lo8|^LO8/, 'LO8'],                // lo8
-        [/^hi8|^HI8/, 'HI8'],                // hi8
-        [/^[rR]\d+/, 'REG'],                 // registers
-        [/^-{0,1}0x[\dABCDEFabcdef]+|^-{0,1}\$[\dABCDEFabcdef]+|^-{0,1}0b[01]+/, 'INT'], // numbers
-        [/^-{0,1}\d+/, 'INT'],              // numbers
-        [/^[a-zA-Z]{2,6}/, 'INST'],         // instructions → CAN TURN LABELS USED IN AN INSTRUCTION INTO INST TYPE
-        [/^\".*?\"|^\'.*?\'/, 'STR'],       // string
-        [/^\.[^\.\s]+/, 'DIR'],             // directives
-        [/^[YZ]\+\d{1,2}/, 'WORDPLUSQ'],    // word+q
-        [/^[XYZ]\+/, 'WORDPLUS'],           // word+
-        [/^-[XYZ]/, 'MINUSWORD'],           // -word
-        [/^[XYZ]/, 'WORD'],                 // word
-        [/^,/, 'COMMA'],                    // comma
-        [/^[^\w\s]+/, 'SYMBOL'],            // symbols
-        [/^[^\s\d]{1}[\w\d_]*/, 'REF']      // references (like labels used in an instruction) → Called STRING in sim.py
-    ];
-
-    // Iterate over the input code, finding matches for each token type
-    while (pos < line.length) {
-        let match = null;
-
-        for (let i = 0; i < PATTERNS.length; i++) {
-            const [regex, tag] = PATTERNS[i];
-            match = regex.exec(line.slice(pos));
-
-            if (match) {
-                if (tag) {
-                    if (tag == 'INST' || tag == 'REG' || tag == 'INT' || tag == 'WORDPLUSQ' || tag == 'WORDPLUS' || tag == 'MINUSWORD' || tag == 'WORD' || tag == 'REF') {
-                        const token = new Token(tag, match[0]);
-                        tokens.push(token);
-                    }
-                }
-                break;
-            }
-        }
-
-        if (!match) {
-            return;
-        }
-
-        pos += match[0].length;
-    }
-
-    // Fixing any bad tokens (like REFs being INST tokens)
-    let i = 0;
-    while (i < tokens.length) {
-        let current_tok = tokens[i];
-
-        // Turn REG:Rn into REG:n
-        if (current_tok.getType() === 'REG' && !Number.isInteger(current_tok.getValue())) {
-            const num = current_tok.getValue().substring(1); // the register number
-            current_tok.setValue(parseInt(num));
-        } else if (i > 0 && current_tok.getType() === 'INST' && !(i === 1 && tokens[i - 1].getType() === 'LABEL')) {
-            current_tok.setType('REF');
-        } else if (i > 0  && !MATH.includes(current_tok.getType()) && tokens[i - 1].getType() === 'REF') {
-            tokens[i - 1].setValue(tokens[i - 1].getValue() + current_tok.getValue());
-            tokens.splice(i, 1); // Virtually advancing
-        } else {
-            i += 1;
-        }
-    }
-
-    return tokens;
-}
-
 function validateInstruction(instruction, operand, line, modelValue) {
     const operandRules = INST_OPERANDS[instruction];
     if (operandRules) {
@@ -85,7 +11,9 @@ function validateInstruction(instruction, operand, line, modelValue) {
             };
         }
 
-        const tokens = simplifiedTokenize(line);
+        let tokens = app.lexer.tokenize(line)[0][0];
+        tokens = tokens.filter(tok => tok.getType() !== "COMMA");
+
         for (let i = 0; i < operandRules.length; i++) {
             const rule = operandRules[i];
             const tok = tokens[i + 1];
@@ -129,9 +57,13 @@ function validateInstruction(instruction, operand, line, modelValue) {
                             length: providedTokenValue.length
                         }
                     }
-                }
+                } else {
+                    if (legalTokenType.includes("INT") && (providedTokenType == "HI8" || providedTokenType == "LO8")) {
+                        return {
+                            valid: true
+                        }
+                    }
 
-                if (!legalTokenType.includes("INT") || providedTokenType != "REF") {
                     const prettyType = Array.isArray(legalTokenType) ? legalTokenType.join(" OR ") : legalTokenType;
                     return {
                         valid: false,
@@ -249,7 +181,7 @@ function checkSyntax(model) {
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        const tokens = line.trim().split(/[\s,]+/);
+        const tokens = line.trim().replace(/;+$/, "").split(/[\s,]+/);
         const inst = tokens[0].toUpperCase();
 
         let operands = tokens.slice(1);

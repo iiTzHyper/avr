@@ -92,7 +92,6 @@ require(['vs/editor/editor.main'], function () {
                 }
             }
 
-            console.log(declaredLabels)
             if (declaredLabels.includes(hoveringWord.toLowerCase())) {
                 return {
                     contents: [
